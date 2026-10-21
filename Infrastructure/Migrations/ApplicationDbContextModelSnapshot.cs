@@ -21,6 +21,35 @@ namespace Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Domain.Entities.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "User"
+                        });
+                });
+
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -45,11 +74,16 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Surname")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
 
@@ -61,6 +95,7 @@ namespace Infrastructure.Migrations
                             Name = "Juan",
                             Password = "123456",
                             PhoneNumber = "3411111111",
+                            RoleId = 1,
                             Surname = "Perez"
                         },
                         new
@@ -70,6 +105,7 @@ namespace Infrastructure.Migrations
                             Name = "Maria",
                             Password = "123456",
                             PhoneNumber = "3412222222",
+                            RoleId = 2,
                             Surname = "Gomez"
                         },
                         new
@@ -79,6 +115,7 @@ namespace Infrastructure.Migrations
                             Name = "Pedro",
                             Password = "123456",
                             PhoneNumber = "3413333333",
+                            RoleId = 2,
                             Surname = "Lopez"
                         },
                         new
@@ -88,6 +125,7 @@ namespace Infrastructure.Migrations
                             Name = "Ana",
                             Password = "123456",
                             PhoneNumber = "3414444444",
+                            RoleId = 2,
                             Surname = "Martinez"
                         },
                         new
@@ -97,8 +135,25 @@ namespace Infrastructure.Migrations
                             Name = "Lucas",
                             Password = "123456",
                             PhoneNumber = "3415555555",
+                            RoleId = 2,
                             Surname = "Fernandez"
                         });
+                });
+
+            modelBuilder.Entity("Domain.Entities.User", b =>
+                {
+                    b.HasOne("Domain.Entities.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Role", b =>
+                {
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

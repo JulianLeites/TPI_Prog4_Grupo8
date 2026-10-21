@@ -12,10 +12,30 @@ public class ApplicationDbContext : DbContext
     {
     }
     public DbSet<User> Users { get; set; }
+    public DbSet<Role> Roles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Role)
+            .WithMany(r => r.Users)
+            .HasForeignKey(u => u.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Role>().HasData(
+            new Role
+            {
+                Id = 1,
+                Name = "Admin"
+            },
+            new Role
+            {
+                Id = 2,
+                Name = "User"
+            }
+        );
 
         modelBuilder.Entity<User>().HasData(
             new User
@@ -25,7 +45,8 @@ public class ApplicationDbContext : DbContext
                 Surname = "Perez",
                 Password = "123456",
                 Email = "juan@example.com",
-                PhoneNumber = "3411111111"
+                PhoneNumber = "3411111111",
+                RoleId = 1,
             },
             new User
             {
@@ -34,7 +55,8 @@ public class ApplicationDbContext : DbContext
                 Surname = "Gomez",
                 Password = "123456",
                 Email = "maria@example.com",
-                PhoneNumber = "3412222222"
+                PhoneNumber = "3412222222",
+                RoleId = 2
             },
             new User
             {
@@ -43,7 +65,8 @@ public class ApplicationDbContext : DbContext
                 Surname = "Lopez",
                 Password = "123456",
                 Email = "pedro@example.com",
-                PhoneNumber = "3413333333"
+                PhoneNumber = "3413333333",
+                RoleId = 2
             },
             new User
             {
@@ -52,7 +75,8 @@ public class ApplicationDbContext : DbContext
                 Surname = "Martinez",
                 Password = "123456",
                 Email = "ana@example.com",
-                PhoneNumber = "3414444444"
+                PhoneNumber = "3414444444",
+                RoleId = 2
             },
             new User
             {
@@ -61,7 +85,8 @@ public class ApplicationDbContext : DbContext
                 Surname = "Fernandez",
                 Password = "123456",
                 Email = "lucas@example.com",
-                PhoneNumber = "3415555555"
+                PhoneNumber = "3415555555",
+                RoleId = 2
             }
         );
     }

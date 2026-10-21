@@ -8,16 +8,16 @@ namespace Application.Services;
 
 public class UserService : IUserService
 {
-    private readonly IUserRepository _IUserRepository;
+    private readonly IUserRepository _userRepository;
 
-    public UserService(IUserRepository UserRepository)
+    public UserService(IUserRepository userRepository)
     {
-        _IUserRepository = UserRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<IEnumerable<UserResponseDto>> GetAllAsync()
     {
-        var users = await _IUserRepository.GetAllAsync();
+        var users = await _userRepository.GetAllAsync();
 
         return users.Select(user => new UserResponseDto
         {
@@ -25,13 +25,15 @@ public class UserService : IUserService
             Name = user.Name,
             Surname = user.Surname,
             Email = user.Email,
-            PhoneNumber = user.PhoneNumber
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
         });
     }
 
-    public async Task<UserResponseDto> GetByIdAsync(int id)
+    public async Task<UserResponseDto?> GetByIdAsync(int id)
     {
-        var user = await _IUserRepository.GetByIdAsync(id);
+        var user = await _userRepository.GetByIdAsync(id);
 
         if (user is null)
             return null;
@@ -42,7 +44,9 @@ public class UserService : IUserService
             Name = user.Name,
             Surname = user.Surname,
             Email = user.Email,
-            PhoneNumber = user.PhoneNumber
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
         };
     }
 }

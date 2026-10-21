@@ -19,12 +19,15 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetAllAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users
+            .Include(user => user.Role)
+            .ToListAsync();
     }
 
     public async Task<User?> GetByIdAsync(int id)
     {
         return await _context.Users
+            .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Id == id);
     }
 }
