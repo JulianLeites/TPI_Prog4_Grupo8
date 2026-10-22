@@ -1,32 +1,28 @@
 ﻿using Application.Interfaces;
-using Infrastructure.Persistance;
 using Domain.Entities;
+using Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Infrastructure.Repositories;
 
-public class UserRepository : IUserRepository
+public class UserRepository
+    : GenericRepository<User>, IUserRepository
 {
-    private readonly ApplicationDbContext _context;
-
     public UserRepository(ApplicationDbContext context)
+        : base(context)
     {
-        _context = context;
     }
 
-    public async Task<IEnumerable<User>> GetAllAsync()
+    public override async Task<IEnumerable<User>> GetAllAsync()
     {
-        return await _context.Users
+        return await _dbSet
             .Include(user => user.Role)
             .ToListAsync();
     }
 
-    public async Task<User?> GetByIdAsync(int id)
+    public override async Task<User?> GetByIdAsync(int id)
     {
-        return await _context.Users
+        return await _dbSet
             .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Id == id);
     }
