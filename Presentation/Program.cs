@@ -1,7 +1,9 @@
 using Application.Interfaces;
 using Application.Services;
-using Domain.Interfaces;
+using Infrastructure.Persistance;
 using Infrastructure.Repositories;
+using Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +14,22 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+
+// Database
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        )
+);
+
+// Dependency Injection
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped(
+    typeof(IGenericRepository<>),
+    typeof(GenericRepository<>)
+);
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
 var app = builder.Build();
 
