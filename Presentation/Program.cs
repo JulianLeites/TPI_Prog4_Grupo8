@@ -29,10 +29,15 @@ builder.Services.AddScoped(
     typeof(GenericRepository<>)
 );
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+
 builder.Services.AddScoped<IRoleRepository, RoleRespository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+
+builder.Services.AddScoped<ITableRepository, TableRepository>();
+builder.Services.AddScoped<ITableService, TableService>();
 
 var app = builder.Build();
 
