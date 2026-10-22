@@ -61,4 +61,39 @@ public class UserController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(UserCreateDto dto)
+    {
+        try
+        {
+            var user = await _userService.CreateAsync(dto);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = user.Id},
+                user
+            );
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("{id:int}/password")]
+    public async Task<IActionResult> ChangePassword(
+        int id,
+        ChangePasswordDto dto)
+    {
+        var changed = await _userService.ChangePasswordAsync(id, dto);
+
+        if (!changed)
+            return BadRequest(new
+            {
+                message = "No se pudo cambiar la contraseña. Verificá el usuario y la contraseña actual"
+            });
+
+        return NoContent();
+    }
 }

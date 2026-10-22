@@ -37,4 +37,10 @@ public class GenericRepository<T> : IGenericRepository<T>
         _dbSet.Remove(entity);
         await _context.SaveChangesAsync();
     }
+
+    public virtual async Task AddAsync(T entity)
+    {
+        await _dbSet.AddAsync(entity);
+        await _context.SaveChangesAsync();
+    }
 }
