@@ -48,12 +48,12 @@ public class ProductCategoryService : IProductCategoryService
             Name = dto.Name
         };
 
-        var created = await _repository.AddAsync(entity);
+        await _repository.AddAsync(entity);
 
         return new ProductCategoryDto
         {
-            Id = created.Id,
-            Name = created.Name
+            Id = entity.Id,
+            Name = entity.Name
         };
     }
 
@@ -73,7 +73,8 @@ public class ProductCategoryService : IProductCategoryService
         var category = await _repository.GetByIdAsync(id);
         if (category == null) return false;
 
-        await _repository.DeleteAsync(id);
+        await _repository.DeleteAsync(category);
+
         return true;
     }
 }
