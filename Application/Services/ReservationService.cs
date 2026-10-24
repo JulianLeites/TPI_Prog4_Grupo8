@@ -11,10 +11,12 @@ namespace Application.Services;
 public class ReservationService : IReservationService
 {
     private readonly IReservationRepository _repository;
+    private readonly ITableRepository _tableRepository;
 
-    public ReservationService(IReservationRepository repository)
+    public ReservationService(IReservationRepository repository, ITableRepository tableRepository)
     {
         _repository = repository;
+        _tableRepository = tableRepository;
     }
 
     public async Task<IEnumerable<ReservationDto>> GetAllAsync()
@@ -25,7 +27,11 @@ public class ReservationService : IReservationService
             Id = r.Id,
             Date = r.Date,
             Time = r.Time,
-            Diners = r.Diners
+            Diners = r.Diners,
+            UserId = r.UserId,
+            TableIds = r.Tables.Select(t => t.Id).ToList(),
+            State = r.State
+
         });
     }
 
@@ -39,7 +45,10 @@ public class ReservationService : IReservationService
             Id = reservation.Id,
             Date = reservation.Date,
             Time = reservation.Time,
-            Diners = reservation.Diners
+            Diners = reservation.Diners,
+            UserId = reservation.UserId,
+            TableIds = reservation.Tables.Select(t => t.Id).ToList(),
+            State = reservation.State
         };
     }
 
@@ -49,8 +58,21 @@ public class ReservationService : IReservationService
         {
             Date = dto.Date,
             Time = dto.Time,
-            Diners = dto.Diners
+            Diners = dto.Diners,
+            UserId= dto.UserId,
+            State = dto.State
         };
+
+        foreach (var tableId in dto.TableIds)
+        {
+            var table = await _tableRepository.GetByIdAsync(tableId);
+
+            if (table is null)
+                throw new ArgumentException(
+                    $"No existe una mesa con ID {tableId}.");
+
+            entity.Tables.Add(table);
+        }
 
         await _repository.AddAsync(entity);
 
@@ -59,7 +81,9 @@ public class ReservationService : IReservationService
             Id = entity.Id,
             Date = entity.Date,
             Time = entity.Time,
-            Diners = entity.Diners
+            Diners = entity.Diners,
+            UserId = entity.UserId,
+            TableIds = entity.Tables.Select(t => t.Id).ToList()
         };
     }
 
@@ -74,6 +98,29 @@ public class ReservationService : IReservationService
 
         await _repository.UpdateAsync(reservation);
         return true;
+    }
+
+    public async Task<ReservationDto?> ChangeStateAsync(int id, ChangeReservationStateDto dto)
+    {
+        var reservation = await _repository.GetByIdAsync(id);
+
+        if (reservation == null)
+            return null;
+
+        reservation.State = dto.State;
+
+        await _repository.UpdateAsync(reservation);
+
+        return new ReservationDto
+        {
+            Id = reservation.Id,
+            Date = reservation.Date,
+            Time = reservation.Time,
+            Diners = reservation.Diners,
+            UserId = reservation.UserId,
+            TableIds = reservation.Tables.Select(t => t.Id).ToList(),
+            State = reservation.State
+        };
     }
 
     public async Task<bool> DeleteAsync(int id)

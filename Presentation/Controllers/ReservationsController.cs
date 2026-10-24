@@ -55,4 +55,24 @@ public class ReservationsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> ChangeState(
+        int id,
+        ChangeReservationStateDto dto)
+    {
+        try
+        {
+            var reservation = await _service.ChangeStateAsync(id, dto);
+
+            if (reservation is null)
+                return NotFound();
+
+            return Ok(reservation);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

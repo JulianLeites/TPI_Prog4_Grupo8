@@ -14,5 +14,6 @@ namespace Domain.Entities
         public string PhoneNumber { get; set; } = string.Empty;
         public int RoleId { get; set; }
         public Role Role { get; set; } = null!;
+        public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     }
 }
