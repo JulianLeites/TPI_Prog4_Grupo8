@@ -1,5 +1,6 @@
 
 using Domain.Entities;
+using Domain.Enums;
 
 namespace Application.Models;
 
@@ -7,7 +8,7 @@ public class OrderDto
 {
     public int Id { get; set; }
 
-    public Order.EnumState State { get; set; }
+    public OrderState State { get; set; }
     public decimal Total { get; set; }
     public int Table_id { get; set; }
 }
@@ -20,5 +21,5 @@ public class OrderCreateDto
 
 public class ChangeOrderStateDto
 {
-    public Order.EnumState State { get; set; }
+    public OrderState State { get; set; }
 }
