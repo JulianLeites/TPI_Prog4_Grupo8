@@ -10,7 +10,9 @@ namespace Domain.Entities
         public int Id { get; set; }
         public int Number { get; set; }
         public int Capacity { get; set; }
-        public TableState State { get; set; } = TableState.Unoccupied;
+        public TableState State { get; set; } = TableState.Libre;
+
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
         public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     }
 }
