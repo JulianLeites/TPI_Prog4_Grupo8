@@ -6,6 +6,6 @@ namespace Domain.Enums;
 
 public enum TableState
 {
-    Libre = 0,
-    Ocupada = 1
+    Unoccupied = 0,
+    Occupied = 1
 }
