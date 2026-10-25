@@ -41,7 +41,7 @@ public class ProudctController : ControllerBase
 
     [HttpPost]
 
-    public async Task<ActionResult> Create(ProductCreateDto dto)
+    public async Task<ActionResult> Create(ProductDto dto)
     {
         try
         {
@@ -64,7 +64,7 @@ public class ProudctController : ControllerBase
 
     [HttpPut]
 
-    public async Task<ActionResult> Update(int id, ProductCreateDto dto)
+    public async Task<ActionResult> Update(int id, ProductDto dto)
     {
         try
         {

@@ -13,7 +13,6 @@ public class ApplicationDbContext : DbContext
     }
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
-
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Table> Tables { get; set; }
@@ -21,6 +20,12 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.ProductCategory)
+            .WithMany(pc => pc.Products)
+            .HasForeignKey(p => p.ProductCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
