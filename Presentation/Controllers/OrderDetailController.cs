@@ -11,9 +11,10 @@ public class OrderDetailController : ControllerBase
 {
     private readonly IOrderDetailService _orderDetailService;
 
-    public OrderDetailController(IOrderDetailService orderService)
+    public OrderDetailController(IOrderDetailService orderDetailService)
     {
-        _orderDetailService = orderService;
+        _orderDetailService = orderDetailService;
+
     }
 
     [HttpGet]
@@ -32,6 +33,22 @@ public class OrderDetailController : ControllerBase
             return NotFound();
 
         return Ok(orderDetail);
+    }
+        
+    [HttpGet("Order/{id:int}")]
+    public async Task<IActionResult> GetDetailsByOrderId(int id)
+    {
+        var orderDetails = await _orderDetailService.GetDetailsByOrderIdAsync(id);
+
+        return Ok(orderDetails);
+    }
+
+    [HttpGet("Product/{id:int}")]
+    public async Task<IActionResult> GetDetailsByProductId(int id)
+    {
+        var orderDetails = await _orderDetailService.GetDetailsByProductIdAsync(id);
+
+        return Ok(orderDetails);
     }
 
     [HttpPut("{id:int}")]

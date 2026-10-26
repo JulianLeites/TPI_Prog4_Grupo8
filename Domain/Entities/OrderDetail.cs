@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Domain.Entities
 {
@@ -10,11 +11,16 @@ namespace Domain.Entities
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Subtotal { get; set; }
-/*         public int Product_id { get; set; }
+        public int Product_id { get; set; }
         public int Order_id { get; set; }
-
-        public Product product { get; set; } 
-
-        public Order order { get; set;} */
+        public Product product { get; set; } = null!;
+        
+        [JsonIgnore]
+        public Order order { get; set;}  = null!;
+        public decimal CalculateSubtotal()
+        {
+            Subtotal = UnitPrice * Quantity;
+            return Subtotal;
+        }
     }
 }

@@ -24,6 +24,8 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+
+        
         modelBuilder.Entity<Product>()
             .HasOne(p => p.ProductCategory)
             .WithMany(pc => pc.Products)
@@ -46,6 +48,17 @@ public class ApplicationDbContext : DbContext
             .HasMany(r => r.Tables)
             .WithMany(t => t.Reservations);
 
+        modelBuilder.Entity<OrderDetail>()
+            .HasOne(od => od.order)
+            .WithMany(o => o.Details)
+            .HasForeignKey(od => od.Order_id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<OrderDetail>()
+            .HasOne(od => od.product)
+            .WithMany()
+            .HasForeignKey(od => od.Product_id)
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<Role>().HasData(
             new Role
             {

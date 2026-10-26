@@ -1,14 +1,27 @@
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Persistance;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
 public class OrderRepository : GenericRepository<Order>, IOrderRepository
 {
-   public OrderRepository(ApplicationDbContext context) : base(context)
+    public OrderRepository(ApplicationDbContext context) : base(context)
     {
         
     }
-    
+    public override async Task<Order?> GetByIdAsync(int id)
+    {
+    return await _context.Orders
+        .Include(o => o.Details)
+        .FirstOrDefaultAsync(o => o.Id == id);
+    }
+    public override async Task<IEnumerable<Order>> GetAllAsync()
+{
+    return await _context.Orders
+        .Include(o => o.Details)
+            .ThenInclude(d => d.product)
+        .ToListAsync();
+}
 }

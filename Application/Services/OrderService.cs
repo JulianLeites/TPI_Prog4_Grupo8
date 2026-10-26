@@ -23,7 +23,8 @@ public class OrderService : IOrderService
             Id = order.Id,
             Total = order.Total,
             Table_id = order.Table_id,
-            State = order.State
+            State = order.State,
+            Details = order.Details
         });
     }
 
@@ -55,7 +56,7 @@ public class OrderService : IOrderService
             return null;
 
         order.Table_id = dto.Table_id;
-        order.Total = dto.Total;
+        
 
         await _orderRepository.UpdateAsync(order);
 
@@ -84,14 +85,14 @@ public class OrderService : IOrderService
 
         var table = await _tableRepository.GetByIdAsync(dto.Table_id);
         if(table is null){
-            throw new ArgumentException("La mesa no existe");
+            throw new ArgumentException($"La mesa con id {dto.Table_id} no existe");
         }
         var order = new Order
         {
             Table_id = dto.Table_id,
-            Total = dto.Total
-
         };
+
+        order.CalculateTotal();
 
         await _orderRepository.AddAsync(order);
 
