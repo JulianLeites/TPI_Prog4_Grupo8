@@ -8,6 +8,10 @@ namespace Application.Services;
 public class OrderDetailService : IOrderDetailService
 {
     private readonly IOrderDetailRepository _orderDetailRepository;
+/* 
+    private readonly IOrderRepository _orderRepository;
+    private readonly IProductRepository _productRepository;
+ */
 
     public OrderDetailService( IOrderDetailRepository repository)
     {
@@ -16,101 +20,96 @@ public class OrderDetailService : IOrderDetailService
 
     public async Task<IEnumerable<OrderDetailDto>> GetAllAsync()
     {
-        var tables = await _orderDetailRepository.GetAllAsync();
+        var ordersDetails = await _orderDetailRepository.GetAllAsync();
 
-        return tables.Select(table => new Order
+        return ordersDetails.Select(orderDetail => new OrderDetailDto
         {
-            Id = table.Id,
-            Number = table.Number,
-            Capacity = table.Capacity,
-            State = table.State
+            Id = orderDetail.Id,
+            Quantity = orderDetail.Quantity,
+            UnitPrice = orderDetail.UnitPrice,
+            Subtotal = orderDetail.Subtotal,
+/*          Product_id = orderDetail.Product_id,
+            Order_id = orderDetail.Order_id */
         });
     }
 
     public async Task<OrderDetailDto?> GetByIdAsync(int id)
     {
-        var table = await _orderDetailRepository.GetByIdAsync(id);
+        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
 
-        if (table is null)
+        if (orderDetail is null)
             return null;
 
         return new OrderDetailDto
         {
-            Id = table.Id,
-            Number = table.Number,
-            Capacity = table.Capacity,
-            State = table.State
+            Id = orderDetail.Id,
+            Quantity = orderDetail.Quantity,
+            UnitPrice = orderDetail.UnitPrice,
+            Subtotal = orderDetail.Subtotal,
+/*          Product_id = orderDetail.Product_id,
+            Order_id = orderDetail.Order_id */
         };
     }
 
-    public async Task<OrderDetailDto?> UpdateAsync(int id, OrderDetailDto dto)
+    public async Task<OrderDetailDto?> UpdateAsync(int id, CreateOrderDetailDto dto)
     {
-        var table = await _orderDetailRepository.GetByIdAsync(id);
+        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
 
-        if (table is null)
+        if (orderDetail is null)
             return null;
 
-        table.Number = dto.Number;
-        table.Capacity = dto.Capacity;
+        orderDetail.Quantity = dto.Quantity;
+        orderDetail.UnitPrice = dto.UnitPrice;
+        orderDetail.Subtotal = dto.UnitPrice;
+/*      orderDetail.Product_id = dto.Product_id;
+        orderDetail.Order_id = dto.Order_id; */
 
-        await _orderDetailRepository.UpdateAsync(table);
+
+        await _orderDetailRepository.UpdateAsync(orderDetail);
 
         return new OrderDetailDto
         {
-            Id = table.Id,
-            Number = table.Number,
-            Capacity = table.Capacity,
-            State = table.State
+            Id = orderDetail.Id,
+            Quantity = orderDetail.Quantity,
+            UnitPrice = orderDetail.UnitPrice,
+            Subtotal = orderDetail.Subtotal,
+/*          Product_id = orderDetail.Product_id,
+            Order_id = orderDetail.Order_id */
         };
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var table = await _orderDetailRepository.GetByIdAsync(id);
+        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
 
-        if (table is null)
+        if (orderDetail is null)
             return false;
 
-        await _orderDetailRepository.DeleteAsync(table);
+        await _orderDetailRepository.DeleteAsync(orderDetail);
         return true;
     }
 
-    public async Task<OrderDetailDto> CreateAsync(TableCreateDto dto)
+    public async Task<OrderDetailDto> CreateAsync(CreateOrderDetailDto dto)
     {
-        var table = new OrderDetailDto
+        var orderDetail = new OrderDetail
         {
-            Number = dto.Number,
-            Capacity = dto.Capacity
+            Quantity = dto.Quantity,
+            UnitPrice = dto.UnitPrice,
+            Subtotal = dto.Subtotal,
+/*             Product_id = dto.Product_id,
+            Order_id = dto.Order_id */
         };
 
-        await _orderDetailRepository.AddAsync(table);
+        await _orderDetailRepository.AddAsync(orderDetail);
 
         return new OrderDetailDto
         {
-            Id = table.Id,
-            Number = table.Number,
-            Capacity = table.Capacity,
-            State = table.State
-        };
-    }
-
-    public async Task<OrderDetailDto?> ChangeStateAsync(int id, ChangeTableStateDto dto)
-    {
-        var table = await _orderDetailRepository.GetByIdAsync(id);
-
-        if (table is null)
-            return null;
-
-        table.State = dto.State;
-
-        await _orderDetailRepository.UpdateAsync(table);
-
-        return new OrderDetailDto
-        {
-            Id = table.Id,
-            Number = table.Number,
-            Capacity = table.Capacity,
-            State = table.State
+            Id = orderDetail.Id,
+            Quantity = orderDetail.Quantity,
+            UnitPrice = orderDetail.UnitPrice,
+            Subtotal = orderDetail.Subtotal,
+/*          Product_id = orderDetail.Product_id,
+            Order_id = orderDetail.Order_id */
         };
     }
 }
