@@ -14,6 +14,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Table> Tables { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
@@ -21,6 +23,12 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.ProductCategory)
+            .WithMany(pc => pc.Products)
+            .HasForeignKey(p => p.ProductCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
@@ -50,7 +58,11 @@ public class ApplicationDbContext : DbContext
                 Name = "User"
             }
         );
-
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.Table)
+            .WithMany(t => t.Orders)
+            .HasForeignKey(o => o.Table_id)
+            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<User>().HasData(
             new User
             {
