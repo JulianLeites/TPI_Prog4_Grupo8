@@ -1,11 +1,13 @@
 ﻿using Application.Interfaces;
 using Application.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ReservationsController : ControllerBase
 {
     private readonly IReservationService _service;

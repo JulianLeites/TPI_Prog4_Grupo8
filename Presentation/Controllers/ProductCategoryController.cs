@@ -1,11 +1,13 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class ProductCategoriesController : ControllerBase
 {
     private readonly IProductCategoryService _service;
@@ -16,6 +18,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ProductCategoryDto>>> GetAll()
     {
         var categories = await _service.GetAllAsync();
@@ -23,6 +26,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<ProductCategoryDto>> GetById(int id)
     {
         var category = await _service.GetByIdAsync(id);
