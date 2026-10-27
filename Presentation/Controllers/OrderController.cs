@@ -107,4 +107,21 @@ public class OrderController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("Table/{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
+    public async Task<IActionResult> GetOrdersByTableId(int id)
+    {
+        var orderDetails = await _orderService.GetOrdersByTableIdAsync(id);
+
+        return Ok(orderDetails);
+    }
+    [HttpGet("State/InPreparation")]
+    [Authorize(Roles = "Waiter,Admin,Kitchen")]
+    public async Task<IActionResult> GetOrdersInPreparation()
+    {
+        var orderDetails = await _orderService.GetOrdersInPreparationAsync();
+
+        return Ok(orderDetails);
+    }
 }

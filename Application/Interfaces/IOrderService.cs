@@ -10,4 +10,6 @@ public interface IOrderService
     Task<bool> DeleteAsync(int id);
     Task<OrderDto> CreateAsync(OrderCreateDto dto);
     Task<OrderDto?> ChangeStateAsync(int id, ChangeOrderStateDto dto);
+    Task<IEnumerable<OrderDto>> GetOrdersByTableIdAsync(int tableId);
+    Task<IEnumerable<OrderDto>> GetOrdersInPreparationAsync();
 }

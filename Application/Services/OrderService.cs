@@ -134,4 +134,47 @@ public class OrderService : IOrderService
             State = order.State
         };
     }
+
+    public async Task<IEnumerable<OrderDto>> GetOrdersByTableIdAsync(int tableId)
+    {
+        var orders = await _orderRepository.GetOrdersByTableIdAsync(tableId);
+
+        return orders.Select(order => new OrderDto
+        {
+            Id = order.Id,
+            Total = order.Total,
+            Table_id = order.Table_id,
+            State = order.State,
+            Details = order.Details.Select(d => new OrderDetailDto
+            {
+                Id = d.Id,
+                Quantity = d.Quantity,
+                UnitPrice = d.UnitPrice,
+                Subtotal = d.Subtotal,
+                Product_id = d.Product_id,
+                Order_id = d.Order_id
+            }).ToList()
+        });
+    }
+    public async Task<IEnumerable<OrderDto>> GetOrdersInPreparationAsync()
+    {
+        var orders = await _orderRepository.GetOrdersInPreparationAsync();
+
+        return orders.Select(order => new OrderDto
+        {
+            Id = order.Id,
+            Total = order.Total,
+            Table_id = order.Table_id,
+            State = order.State,
+            Details = order.Details.Select(d => new OrderDetailDto
+            {
+                Id = d.Id,
+                Quantity = d.Quantity,
+                UnitPrice = d.UnitPrice,
+                Subtotal = d.Subtotal,
+                Product_id = d.Product_id,
+                Order_id = d.Order_id
+            }).ToList()
+        });
+    }
 }
