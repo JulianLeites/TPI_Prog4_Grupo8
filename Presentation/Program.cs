@@ -85,7 +85,7 @@ builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 
-builder.Services.AddScoped<IRoleRepository, RoleRespository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddScoped<ITableRepository, TableRepository>();
@@ -93,8 +93,6 @@ builder.Services.AddScoped<ITableService, TableService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddSwaggerGen(options =>
 {

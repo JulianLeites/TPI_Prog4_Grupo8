@@ -24,7 +24,15 @@ public class OrderService : IOrderService
             Total = order.Total,
             Table_id = order.Table_id,
             State = order.State,
-            Details = order.Details
+            Details = order.Details.Select(d => new OrderDetailDto
+            {
+                Id = d.Id,
+                Quantity = d.Quantity,
+                UnitPrice = d.UnitPrice,
+                Subtotal = d.Subtotal,
+                Product_id = d.Product_id,
+                Order_id = d.Order_id
+            }).ToList()
         });
     }
 
