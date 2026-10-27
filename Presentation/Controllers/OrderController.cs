@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Application.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class OrderController : ControllerBase
 {
     private readonly IOrderService _orderService;
@@ -17,6 +19,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> GetAll()
     {
         var orders = await _orderService.GetAllAsync();
@@ -24,6 +27,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin,User")]
     public async Task<IActionResult> GetById(int id)
     {
         var order = await _orderService.GetByIdAsync(id);
@@ -35,6 +39,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> Update(int id, OrderCreateDto dto)
     {
         try
@@ -53,6 +58,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPatch("{id:int}/state")]
+    [Authorize(Roles = "Waiter,Admin,Kitchen")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)
     {
         try
@@ -71,6 +77,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _orderService.DeleteAsync(id);
@@ -82,6 +89,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> Create(OrderCreateDto dto)
     {
         try

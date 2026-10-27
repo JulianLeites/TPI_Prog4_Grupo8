@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Application.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-
+[Authorize(Roles = "Admin")]
 public class ProudctController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -18,7 +19,7 @@ public class ProudctController : ControllerBase
     }
 
     [HttpGet]
-
+    [AllowAnonymous]
     public async Task<ActionResult> GetAll()
     {
         var products = await _productService.GetAllAsync();
@@ -27,7 +28,7 @@ public class ProudctController : ControllerBase
 
 
     [HttpGet("{id:int}")]
-
+    [AllowAnonymous]
     public async Task<ActionResult> GetById([FromRoute] int id)
     {
         var product = await _productService.GetByIdAsync(id);

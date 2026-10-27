@@ -27,4 +27,11 @@ public class UserRepository
             .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Id == id);
     }
+
+    public async Task<User?> GetByEmailAsync(string email)
+    {
+        return await _dbSet
+            .Include(user => user.Role)
+            .FirstOrDefaultAsync(user => user.Email == email);
+    }
 }
