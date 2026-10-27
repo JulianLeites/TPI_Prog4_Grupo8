@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Application.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Waiter,Admin")]
 public class OrderDetailController : ControllerBase
 {
     private readonly IOrderDetailService _orderDetailService;
@@ -36,6 +38,7 @@ public class OrderDetailController : ControllerBase
     }
         
     [HttpGet("Order/{id:int}")]
+    [Authorize(Roles = "Waiter,Admin,User")]
     public async Task<IActionResult> GetDetailsByOrderId(int id)
     {
         var orderDetails = await _orderDetailService.GetDetailsByOrderIdAsync(id);

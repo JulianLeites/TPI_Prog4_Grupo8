@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class TableController : ControllerBase
 {
     private readonly ITableService _tableService;
@@ -17,6 +19,7 @@ public class TableController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> GetAll()
     {
         var tables = await _tableService.GetAllAsync();
@@ -24,6 +27,7 @@ public class TableController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> GetById(int id)
     {
         var table = await _tableService.GetByIdAsync(id);
@@ -35,6 +39,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, TableUpdateDto dto)
     {
         try
@@ -53,6 +58,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPatch("{id:int}/state")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> ChangeState(
         int id,
         ChangeTableStateDto dto)
@@ -73,6 +79,7 @@ public class TableController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _tableService.DeleteAsync(id);
@@ -84,6 +91,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create(TableCreateDto dto)
     {
         try
