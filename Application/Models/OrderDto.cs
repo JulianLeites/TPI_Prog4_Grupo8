@@ -11,7 +11,7 @@ public class OrderDto
     public OrderState State { get; set; }
     public decimal Total { get; set; }
     public int Table_id { get; set; }
-    public ICollection<OrderDetail> Details { get; set; } = new List<OrderDetail>();
+    public ICollection<OrderDetailDto> Details { get; set; } = new List<OrderDetailDto>();
 }
 
 public class OrderCreateDto
