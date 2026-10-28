@@ -54,6 +54,10 @@ public class UserUpdateDto
     public string Email { get; set; } = string.Empty;
     [Required]
     public string PhoneNumber { get; set; } = string.Empty;
+}
+
+public class ChangeRoleDto
+{
     [Range(1, int.MaxValue)]
     public int RoleId { get; set; }
 }

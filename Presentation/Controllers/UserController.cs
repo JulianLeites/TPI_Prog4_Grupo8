@@ -102,4 +102,23 @@ public class UserController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{id}/role")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ChangeRole(int id, ChangeRoleDto dto)
+    {
+        try
+        {
+            var user = await _userService.ChangeRoleAsync(id, dto);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

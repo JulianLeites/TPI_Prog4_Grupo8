@@ -69,15 +69,10 @@ public class UserService : IUserService
         if (user is null)
             return null;
 
-        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
-
-        if (role is null)
-            throw new ArgumentException("El rol seleccionado no existe");
         user.Name = dto.Name;
         user.Surname = dto.Surname;
         user.Email = dto.Email;
         user.PhoneNumber = dto.PhoneNumber;
-        user.RoleId = dto.RoleId;
 
         await _userRepository.UpdateAsync(user);
 
@@ -155,5 +150,33 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
 
         return true;
+    }
+
+    public async Task<UserResponseDto?> ChangeRoleAsync(int id, ChangeRoleDto dto)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return null;
+
+        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
+
+        if (role is null)
+            throw new ArgumentException("El rol seleccionado no existe");
+
+        user.RoleId = dto.RoleId;
+
+        await _userRepository.UpdateAsync(user);
+
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Surname = user.Surname,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
+        };
     }
 }
