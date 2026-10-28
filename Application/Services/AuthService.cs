@@ -29,7 +29,8 @@ public class AuthService : IAuthService
 
     public async Task<bool> RegisterAsync(RegisterDto registerDto)
     {
-        var existingUser = await _userRepository.GetByEmailAsync(registerDto.Email);
+        var email = registerDto.Email.Trim().ToLowerInvariant();
+        var existingUser = await _userRepository.GetByEmailAsync(email);
 
         if (existingUser is not null)
             return false;
@@ -46,7 +47,7 @@ public class AuthService : IAuthService
         {
             Name = registerDto.Name,
             Surname = registerDto.Surname,
-            Email = registerDto.Email,
+            Email = email,
             PhoneNumber = registerDto.PhoneNumber,
             Password = _passwordHasherService.HashPassword(registerDto.Password),
             RoleId = userRole.Id

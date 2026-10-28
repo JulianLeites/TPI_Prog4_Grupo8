@@ -3,6 +3,7 @@ using Application.Services;
 using Infrastructure.Persistance;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
+using Infrastructure.Initialization;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,6 +95,8 @@ builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<InitialAdminSeeder>();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -127,5 +130,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider
+        .GetRequiredService<InitialAdminSeeder>();
+
+    await seeder.InitializeAsync(app.Configuration);
+}
 
 app.Run();

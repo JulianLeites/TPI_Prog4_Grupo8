@@ -19,8 +19,17 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAll()
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( int? roleId)
     {
+        if (roleId.HasValue)
+        {
+            if (roleId.Value <= 0)
+                return BadRequest("Id de rol Invalido");
+
+            var usersByRole = await _userService.GetByRoleIdAsync(roleId.Value);
+            return Ok(usersByRole);
+        }
+
         var users = await _userService.GetAllAsync();
         return Ok(users);
     }

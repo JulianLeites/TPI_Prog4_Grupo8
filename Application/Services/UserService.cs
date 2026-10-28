@@ -60,18 +60,23 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<UserResponseDto?> UpdateAsync(
-        int id,
-        UserUpdateDto dto)
+    public async Task<UserResponseDto?> UpdateAsync(int id, UserUpdateDto dto)
     {
         var user = await _userRepository.GetByIdAsync(id);
 
         if (user is null)
             return null;
 
+        var email = dto.Email.Trim().ToLowerInvariant();
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser is not null && existingUser.Id != id)
+            throw new ArgumentException("El email ya esta registrado por otro usuario");
+
         user.Name = dto.Name;
         user.Surname = dto.Surname;
-        user.Email = dto.Email;
+        user.Email = email;
         user.PhoneNumber = dto.PhoneNumber;
 
         await _userRepository.UpdateAsync(user);
@@ -101,6 +106,13 @@ public class UserService : IUserService
 
     public async Task<UserResponseDto> CreateAsync(UserCreateDto dto)
     {
+        var email = dto.Email.Trim().ToLowerInvariant();
+
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser is not null)
+            throw new ArgumentException("El email ya esta registrado");
+
         var role = await _roleRepository.GetByIdAsync(dto.RoleId);
 
         if (role is null)
@@ -110,7 +122,7 @@ public class UserService : IUserService
         {
             Name = dto.Name,
             Surname = dto.Surname,
-            Email = dto.Email,
+            Email = email,
             PhoneNumber = dto.PhoneNumber,
             RoleId = dto.RoleId,
             Password = _passwordHasher.HashPassword(dto.Password)
@@ -178,5 +190,21 @@ public class UserService : IUserService
             RoleId = user.RoleId,
             RoleName = user.Role.Name
         };
+    }
+
+    public async Task<IEnumerable<UserResponseDto>> GetByRoleIdAsync(int roleId)
+    {
+        var users = await _userRepository.GetByRoleIdAsync(roleId);
+
+        return users.Select(user => new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Surname = user.Surname,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
+        });
     }
 }

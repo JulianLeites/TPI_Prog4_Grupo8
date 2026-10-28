@@ -34,4 +34,12 @@ public class UserRepository
             .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Email == email);
     }
+
+    public async Task<IEnumerable<User>> GetByRoleIdAsync(int roleId)
+    {
+        return await _dbSet
+            .Include(user => user.Role)
+            .Where(user => user.RoleId == roleId)
+            .ToListAsync();
+    }
 }
