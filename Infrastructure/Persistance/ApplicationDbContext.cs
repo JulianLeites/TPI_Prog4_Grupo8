@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Models;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Table> Tables { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<PasswordReset> PasswordResets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +69,12 @@ public class ApplicationDbContext : DbContext
             .WithMany(t => t.Orders)
             .HasForeignKey(o => o.Table_id)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PasswordReset>()
+            .HasOne(pr => pr.User)
+            .WithMany()
+            .HasForeignKey(pr => pr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Role>().HasData(
             new Role

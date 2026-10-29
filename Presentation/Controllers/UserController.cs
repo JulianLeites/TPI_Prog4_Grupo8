@@ -1,8 +1,10 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Presentation.Controllers;
 
@@ -19,7 +21,7 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( int? roleId)
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( [FromQuery] int? roleId)
     {
         if (roleId.HasValue)
         {
@@ -46,7 +48,27 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null)
+            return Unauthorized();
+
+        if (!int.TryParse(userIdClaim.Value, out int userId))
+            return Unauthorized();
+
+        var user = await _userService.GetByIdAsync(userId);
+
+        if (user is null)
+            return NotFound();
+
+        return Ok(user);
+    }
+
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, UserUpdateDto dto)
     {
         try
@@ -96,11 +118,24 @@ public class UserController : ControllerBase
         }
     }
 
-    [HttpPatch("{id:int}/password")]
+    [HttpPatch("me/password")]
     public async Task<IActionResult> ChangePassword(
         int id,
         ChangePasswordDto dto)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        if (id != userId)
+        {
+            return Forbid();
+        }
+
         var changed = await _userService.ChangePasswordAsync(id, dto);
 
         if (!changed)

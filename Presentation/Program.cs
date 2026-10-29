@@ -97,6 +97,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<InitialAdminSeeder>();
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
