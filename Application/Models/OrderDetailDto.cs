@@ -14,15 +14,19 @@ public class OrderDetailDto
 public class CreateOrderDetailDto
 {
     public int Quantity { get; set; }
-   
     public int Product_id { get; set; }
-    
     public int Order_id { get; set; } 
 
 }
 
-public class OrderDetailUpdateDto
+public class OrderDetailQuantityDto
 {
     public int Quantity { get; set; }
-   
+}
+
+public class OrderDetailUpdateDto
+{
+    public int Product_id { get; set; }
+
+    public int Quantity { get; set; }
 }

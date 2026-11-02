@@ -82,15 +82,54 @@ public class OrderDetailService : IOrderDetailService
             Order_id = orderDetail.Order_id 
         });
     }
-    public async Task<OrderDetailDto?> UpdateAsync(int id, CreateOrderDetailDto dto)
+    public async Task<OrderDetailDto?> UpdateAsync(int id, OrderDetailUpdateDto dto)
     {
         var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
 
         if (orderDetail is null)
             return null;
 
+        var product = await _productRepository.GetByIdAsync(id);
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
+    
+        if (product is null)
+            throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
+        if (dto.Quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a 0");
 
+        orderDetail.Product_id = dto.Product_id;
+        orderDetail.UnitPrice = product.Price;
+        orderDetail.Quantity = dto.Quantity;
+        orderDetail.Subtotal = orderDetail.CalculateSubtotal();
+
+        await _orderDetailRepository.UpdateAsync(orderDetail);
+        order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+
+        order.Total = order.CalculateTotal();
+
+        await _orderRepository.UpdateAsync(order);
+        return new OrderDetailDto
+        {
+            Id = orderDetail.Id,
+            Quantity = orderDetail.Quantity,
+            UnitPrice = orderDetail.UnitPrice,
+            Subtotal = orderDetail.Subtotal,
+            Product_id = orderDetail.Product_id,
+            Order_id = orderDetail.Order_id
+        };
+    }
+
+    public async Task<OrderDetailDto?> ChangeQuantityAsync(int id, OrderDetailQuantityDto dto)
+    {
+        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+
+        if (orderDetail is null)
+            return null;
+        if (dto.Quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a 0");
+
+        var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
+        
         orderDetail.Quantity = dto.Quantity;
         orderDetail.Subtotal = orderDetail.CalculateSubtotal();
 
