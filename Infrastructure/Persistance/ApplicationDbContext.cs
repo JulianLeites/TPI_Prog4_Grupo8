@@ -19,18 +19,21 @@ public class ApplicationDbContext : DbContext
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Table> Tables { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<PasswordReset> PasswordResets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-
         
         modelBuilder.Entity<Product>()
             .HasOne(p => p.ProductCategory)
             .WithMany(pc => pc.Products)
             .HasForeignKey(p => p.ProductCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
 
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
@@ -59,6 +62,19 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(od => od.Product_id)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.Table)
+            .WithMany(t => t.Orders)
+            .HasForeignKey(o => o.Table_id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PasswordReset>()
+            .HasOne(pr => pr.User)
+            .WithMany()
+            .HasForeignKey(pr => pr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<Role>().HasData(
             new Role
             {
@@ -68,64 +84,17 @@ public class ApplicationDbContext : DbContext
             new Role
             {
                 Id = 2,
-                Name = "User"
-            }
-        );
-        modelBuilder.Entity<Order>()
-            .HasOne(o => o.Table)
-            .WithMany(t => t.Orders)
-            .HasForeignKey(o => o.Table_id)
-            .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<User>().HasData(
-            new User
-            {
-                Id = 1,
-                Name = "Juan",
-                Surname = "Perez",
-                Password = "123456",
-                Email = "juan@example.com",
-                PhoneNumber = "3411111111",
-                RoleId = 1,
+                Name = "Waiter"
             },
-            new User
-            {
-                Id = 2,
-                Name = "Maria",
-                Surname = "Gomez",
-                Password = "123456",
-                Email = "maria@example.com",
-                PhoneNumber = "3412222222",
-                RoleId = 2
-            },
-            new User
+            new Role
             {
                 Id = 3,
-                Name = "Pedro",
-                Surname = "Lopez",
-                Password = "123456",
-                Email = "pedro@example.com",
-                PhoneNumber = "3413333333",
-                RoleId = 2
+                Name = "Kitchen"
             },
-            new User
+            new Role
             {
                 Id = 4,
-                Name = "Ana",
-                Surname = "Martinez",
-                Password = "123456",
-                Email = "ana@example.com",
-                PhoneNumber = "3414444444",
-                RoleId = 2
-            },
-            new User
-            {
-                Id = 5,
-                Name = "Lucas",
-                Surname = "Fernandez",
-                Password = "123456",
-                Email = "lucas@example.com",
-                PhoneNumber = "3415555555",
-                RoleId = 2
+                Name = "User"
             }
         );
     }

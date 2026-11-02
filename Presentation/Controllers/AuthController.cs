@@ -11,10 +11,12 @@ namespace Presentation.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
     {
         _authService = authService;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -48,6 +50,43 @@ public class AuthController : ControllerBase
         return Ok(new
         {
             accessToken = token
+        });
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordDto dto)
+    {
+        try
+        {
+            await _authService.ForgotPasswordAsync(dto);
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "Error durante el proceso de recuperacion de contraseña");
+        }
+
+        return Ok(new
+        {
+            message = "Si existe una cuenta asociada a ese correo recibirás un código de recuperacion de contraseña"
+        });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordDto dto)
+    {
+        var result = await _authService.ResetPasswordAsync(dto);
+
+        if (!result)
+        {
+            return BadRequest(new
+            {
+                message = "No se pudo restablecer la contraseña"
+            });
+        }
+
+        return Ok(new
+        {
+            essage = "Contraseña restablecida correctamente"
         });
     }
 }

@@ -1,8 +1,10 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Presentation.Controllers;
 
@@ -19,8 +21,17 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAll()
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( [FromQuery] int? roleId)
     {
+        if (roleId.HasValue)
+        {
+            if (roleId.Value <= 0)
+                return BadRequest("Id de rol Invalido");
+
+            var usersByRole = await _userService.GetByRoleIdAsync(roleId.Value);
+            return Ok(usersByRole);
+        }
+
         var users = await _userService.GetAllAsync();
         return Ok(users);
     }
@@ -37,7 +48,27 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null)
+            return Unauthorized();
+
+        if (!int.TryParse(userIdClaim.Value, out int userId))
+            return Unauthorized();
+
+        var user = await _userService.GetByIdAsync(userId);
+
+        if (user is null)
+            return NotFound();
+
+        return Ok(user);
+    }
+
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, UserUpdateDto dto)
     {
         try
@@ -55,11 +86,56 @@ public class UserController : ControllerBase
         }
     }
 
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMe(UserUpdateDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var user = await _userService.UpdateAsync(userId, dto);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
-    //Authorize
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _userService.DeleteAsync(id);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        var deleted = await _userService.DeleteAsync(userId);
 
         if (!deleted)
             return NotFound();
@@ -87,11 +163,24 @@ public class UserController : ControllerBase
         }
     }
 
-    [HttpPatch("{id:int}/password")]
+    [HttpPatch("me/password")]
     public async Task<IActionResult> ChangePassword(
         int id,
         ChangePasswordDto dto)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        if (id != userId)
+        {
+            return Forbid();
+        }
+
         var changed = await _userService.ChangePasswordAsync(id, dto);
 
         if (!changed)
@@ -101,5 +190,24 @@ public class UserController : ControllerBase
             });
 
         return NoContent();
+    }
+
+    [HttpPatch("{id}/role")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ChangeRole(int id, ChangeRoleDto dto)
+    {
+        try
+        {
+            var user = await _userService.ChangeRoleAsync(id, dto);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

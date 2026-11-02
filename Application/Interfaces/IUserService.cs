@@ -14,4 +14,6 @@ public interface IUserService
     Task<bool> DeleteAsync(int id);
     Task<UserResponseDto> CreateAsync(UserCreateDto dto);
     Task<bool> ChangePasswordAsync(int id, ChangePasswordDto dto);
+    Task<UserResponseDto?> ChangeRoleAsync(int id, ChangeRoleDto dto);
+    Task<IEnumerable<UserResponseDto>> GetByRoleIdAsync(int roleId);
 }

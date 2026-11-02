@@ -22,6 +22,40 @@ namespace Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Application.Models.PasswordReset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResets");
+                });
+
             modelBuilder.Entity("Domain.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -183,6 +217,16 @@ namespace Infrastructure.Migrations
                         new
                         {
                             Id = 2,
+                            Name = "Waiter"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Kitchen"
+                        },
+                        new
+                        {
+                            Id = 4,
                             Name = "User"
                         });
                 });
@@ -219,7 +263,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -242,61 +286,12 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Email = "juan@example.com",
-                            Name = "Juan",
-                            Password = "123456",
-                            PhoneNumber = "3411111111",
-                            RoleId = 1,
-                            Surname = "Perez"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Email = "maria@example.com",
-                            Name = "Maria",
-                            Password = "123456",
-                            PhoneNumber = "3412222222",
-                            RoleId = 2,
-                            Surname = "Gomez"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Email = "pedro@example.com",
-                            Name = "Pedro",
-                            Password = "123456",
-                            PhoneNumber = "3413333333",
-                            RoleId = 2,
-                            Surname = "Lopez"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Email = "ana@example.com",
-                            Name = "Ana",
-                            Password = "123456",
-                            PhoneNumber = "3414444444",
-                            RoleId = 2,
-                            Surname = "Martinez"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Email = "lucas@example.com",
-                            Name = "Lucas",
-                            Password = "123456",
-                            PhoneNumber = "3415555555",
-                            RoleId = 2,
-                            Surname = "Fernandez"
-                        });
                 });
 
             modelBuilder.Entity("ReservationTable", b =>
@@ -312,6 +307,17 @@ namespace Infrastructure.Migrations
                     b.HasIndex("TablesId");
 
                     b.ToTable("ReservationTable");
+                });
+
+            modelBuilder.Entity("Application.Models.PasswordReset", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.Order", b =>

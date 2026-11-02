@@ -43,9 +43,7 @@ public class TableService : ITableService
         };
     }
 
-    public async Task<TableDto?> UpdateAsync(
-        int id,
-        TableUpdateDto dto)
+    public async Task<TableDto?> UpdateAsync(int id, TableUpdateDto dto)
     {
         var table = await _tableRepository.GetByIdAsync(id);
 

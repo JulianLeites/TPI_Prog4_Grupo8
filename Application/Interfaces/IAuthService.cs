@@ -9,4 +9,6 @@ public interface IAuthService
 {
     Task<bool> RegisterAsync(RegisterDto registerDto);
     Task <string?> LoginAsync(LoginDto loginDto);
+    Task ForgotPasswordAsync(ForgotPasswordDto dto);
+    Task<bool> ResetPasswordAsync(ResetPasswordDto dto);
 }
