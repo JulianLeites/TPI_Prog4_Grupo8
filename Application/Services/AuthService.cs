@@ -5,7 +5,6 @@ using Domain.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Application.Services;
 
@@ -13,22 +12,25 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IGenericRepository<Role> _roleRepository;
-    private readonly IGenericRepository<PasswordReset> _passwordResetRepository;
+    private readonly IPasswordResetRepository _passwordResetRepository;
     private readonly IEmailService _emailService;
     private readonly IPasswordHasherService _passwordHasherService;
     private readonly IJwtService _jwtService;
+    private readonly IPasswordRecoveryRepository _passwordRecoveryRepository;
 
     public AuthService(
         IUserRepository userRepository,
         IGenericRepository<Role> roleRepository,
-        IGenericRepository<PasswordReset> passwordResetRepository,
+        IPasswordResetRepository passwordResetRepository,
         IEmailService emailService,
+        IPasswordRecoveryRepository passwordRecoveryRepository,
         IPasswordHasherService passwordHasherService,
         IJwtService jwtService)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _passwordResetRepository = passwordResetRepository;
+        _passwordRecoveryRepository = passwordRecoveryRepository;
         _emailService = emailService;
         _passwordHasherService = passwordHasherService;
         _jwtService = jwtService;
@@ -96,10 +98,10 @@ public class AuthService : IAuthService
         if (user is null)
             return;
 
-        var resets = await _passwordResetRepository.GetAllAsync();
+        var resets = await _passwordResetRepository
+            .GetUnusedByUserIdAsync(user.Id);
 
-        foreach (var reset in resets.Where(
-            r => r.UserId == user.Id && !r.IsUsed))
+        foreach (var reset in resets)
         {
             reset.IsUsed = true;
             await _passwordResetRepository.UpdateAsync(reset);
@@ -135,12 +137,8 @@ public class AuthService : IAuthService
         if (user is null)
             return false;
 
-        var resets = await _passwordResetRepository.GetAllAsync();
-
-        var reset = resets
-            .Where(r => r.UserId == user.Id && !r.IsUsed)
-            .OrderByDescending(r => r.CreatedAt)
-            .FirstOrDefault();
+        var reset = await _passwordResetRepository
+            .GetLatestUnusedByUserIdAsync(user.Id);
 
         if (reset is null)
             return false;
@@ -166,13 +164,13 @@ public class AuthService : IAuthService
             return false;
         }
 
-        user.Password = _passwordHasherService.HashPassword(dto.NewPassword);
-        await _userRepository.UpdateAsync(user);
+        var newPasswordHash = _passwordHasherService.HashPassword(dto.NewPassword);
 
-        reset.IsUsed = true;
-        await _passwordResetRepository.UpdateAsync(reset);
-
-        return true;
+        return await _passwordRecoveryRepository.ResetPasswordAtomicallyAsync(
+            user.Id,
+            reset.Id,
+            newPasswordHash
+        );
     }
 
 }

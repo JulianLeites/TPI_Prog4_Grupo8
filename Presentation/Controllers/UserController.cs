@@ -86,11 +86,56 @@ public class UserController : ControllerBase
         }
     }
 
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMe(UserUpdateDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var user = await _userService.UpdateAsync(userId, dto);
+
+            if (user is null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
-    //Authorize
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _userService.DeleteAsync(id);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteMe()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null ||
+            !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        var deleted = await _userService.DeleteAsync(userId);
 
         if (!deleted)
             return NotFound();

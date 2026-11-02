@@ -43,10 +43,7 @@ public class RoleService : IRoleService
         };
     }
 
-    public async Task<RoleDto?> UpdateAsync(
-        int id,
-        RoleUpdateDto dto
-        )
+    public async Task<RoleDto?> UpdateAsync(int id, RoleUpdateDto dto)
     {
         var role = await _roleRepository.GetByIdAsync(id);
 

@@ -97,6 +97,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<InitialAdminSeeder>();
 
+builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+
+builder.Services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
+
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddSwaggerGen(options =>
