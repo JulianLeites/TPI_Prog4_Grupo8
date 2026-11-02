@@ -35,6 +35,20 @@ public class ApplicationDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        modelBuilder.Entity<Table>()
+            .HasIndex(t => t.Number)
+            .IsUnique();
+
+        modelBuilder.Entity<Table>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_Tables_Number_Minimum",
+                "[Number] >= 1"));
+
+        modelBuilder.Entity<Table>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_Tables_Capacity_Minimum",
+                "[Capacity] >= 1"));
+
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
             .WithMany(r => r.Users)

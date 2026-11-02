@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +21,12 @@ public class TableController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] TableState? state)
     {
-        var tables = await _tableService.GetAllAsync();
+        if (state.HasValue && !Enum.IsDefined(state.Value))
+            return BadRequest(new { message = "Estado de mesa invalido" });
+
+        var tables = await _tableService.GetAllAsync(state);
         return Ok(tables);
     }
 
@@ -31,6 +35,18 @@ public class TableController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var table = await _tableService.GetByIdAsync(id);
+
+        if (table is null)
+            return NotFound();
+
+        return Ok(table);
+    }
+
+    [HttpGet("number/{number:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
+    public async Task<IActionResult> GetByNumber(int number)
+    {
+        var table = await _tableService.GetByNumberAsync(number);
 
         if (table is null)
             return NotFound();
@@ -59,9 +75,7 @@ public class TableController : ControllerBase
 
     [HttpPatch("{id:int}/state")]
     [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> ChangeState(
-        int id,
-        ChangeTableStateDto dto)
+    public async Task<IActionResult> ChangeState(int id,ChangeTableStateDto dto)
     {
         try
         {
@@ -82,12 +96,19 @@ public class TableController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _tableService.DeleteAsync(id);
+        try
+        {
+            var deleted = await _tableService.DeleteAsync(id);
 
-        if (!deleted)
-            return NotFound();
+            if (!deleted)
+                return NotFound();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpPost]
