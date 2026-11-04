@@ -46,7 +46,7 @@ public class AuthService : IAuthService
 
         var roles = await _roleRepository.GetAllAsync();
         var userRole = roles.FirstOrDefault(
-            role => role.Name == "User"
+            role => role.Name.Equals("user", StringComparison.OrdinalIgnoreCase)
         );
 
         if (userRole is null)

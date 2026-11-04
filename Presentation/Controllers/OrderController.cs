@@ -19,7 +19,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetAll()
     {
         var orders = await _orderService.GetAllAsync();
@@ -27,7 +27,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> GetById(int id)
     {
         var order = await _orderService.GetByIdAsync(id);
@@ -39,7 +39,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Update(int id, OrderCreateDto dto)
     {
         try
@@ -58,7 +58,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPatch("{id:int}/state")]
-    [Authorize(Roles = "Waiter,Admin,Kitchen")]
+    [Authorize(Roles = "waiter,admin,kitchen")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)
     {
         try
@@ -77,7 +77,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _orderService.DeleteAsync(id);
@@ -89,7 +89,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Create(OrderCreateDto dto)
     {
         try
