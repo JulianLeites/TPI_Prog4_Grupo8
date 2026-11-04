@@ -20,7 +20,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( [FromQuery] int? roleId)
     {
         if (roleId.HasValue)
@@ -37,7 +37,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetById(int id)
     {
         var user = await _userService.GetByIdAsync(id);
@@ -68,7 +68,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(int id, UserUpdateDto dto)
     {
         try
@@ -113,7 +113,7 @@ public class UserController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _userService.DeleteAsync(id);
@@ -144,7 +144,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create(UserCreateDto dto)
     {
         try
@@ -193,7 +193,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPatch("{id}/role")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> ChangeRole(int id, ChangeRoleDto dto)
     {
         try

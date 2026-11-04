@@ -89,27 +89,8 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(pr => pr.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Role>().HasData(
-            new Role
-            {
-                Id = 1,
-                Name = "Admin"
-            },
-            new Role
-            {
-                Id = 2,
-                Name = "Waiter"
-            },
-            new Role
-            {
-                Id = 3,
-                Name = "Kitchen"
-            },
-            new Role
-            {
-                Id = 4,
-                Name = "User"
-            }
-        );
+        modelBuilder.Entity<Role>()
+            .HasIndex(r => r.Name)
+            .IsUnique();
     }
 }

@@ -11,6 +11,13 @@ namespace Application.Services;
 public class RoleService : IRoleService
 {
     private readonly IRoleRepository _roleRepository;
+    private static readonly HashSet<int> ProtectedRoleIds = new()
+    {
+        1, // admin
+        2, // waiter
+        3, // kitchen
+        4 // user
+    };
 
     public RoleService(IRoleRepository roleRepository)
     {
@@ -50,7 +57,20 @@ public class RoleService : IRoleService
         if (role is null)
             return null;
 
-        role.Name = dto.Name;
+        if (ProtectedRoleIds.Contains(id))
+            throw new InvalidOperationException("No se pueden modificar los roles predefinidos del sistema");
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("El nombre del rol es obligatorio");
+
+        var name = dto.Name.Trim().ToLowerInvariant();
+
+        var exists = await _roleRepository.ExistsByNameAsync(name, id);
+
+        if (exists)
+            throw new InvalidOperationException("Ya existe un rol con ese nombre");
+
+        role.Name = name;
 
         await _roleRepository.UpdateAsync(role);
 
@@ -68,15 +88,32 @@ public class RoleService : IRoleService
         if (role is null)
             return false;
 
+        if (ProtectedRoleIds.Contains(id))
+            throw new InvalidOperationException("No se puede eliminar un rol predefinido del sistema");
+
+        var hasUsers = await _roleRepository.HasUsersAsync(id);
+
+        if (hasUsers)
+            throw new InvalidOperationException("No se puede eliminar un rol con usuarios asociados");
+
         await _roleRepository.DeleteAsync(role);
         return true;
     }
 
     public async Task<RoleDto> CreateAsync(RoleCreateDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("El nombre del rol es obligatorio");
+        
+        var name = dto.Name.Trim().ToLowerInvariant();
+
+        var exists = await _roleRepository.ExistsByNameAsync(name);
+        if (exists)
+            throw new InvalidOperationException("Ya existe un rol con ese nombre");
+
         var role = new Role
         {
-            Name = dto.Name
+            Name = name
         };
 
         await _roleRepository.AddAsync(role);

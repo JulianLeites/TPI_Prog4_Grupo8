@@ -8,7 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Waiter,Admin")]
+[Authorize(Roles = "waiter,admin")]
 public class OrderDetailController : ControllerBase
 {
     private readonly IOrderDetailService _orderDetailService;
@@ -38,7 +38,7 @@ public class OrderDetailController : ControllerBase
     }
         
     [HttpGet("Order/{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> GetDetailsByOrderId(int id)
     {
         var orderDetails = await _orderDetailService.GetDetailsByOrderIdAsync(id);

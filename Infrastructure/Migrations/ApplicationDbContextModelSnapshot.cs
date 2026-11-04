@@ -202,33 +202,14 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.HasIndex("Name")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Waiter"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Kitchen"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "User"
-                        });
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Domain.Entities.Table", b =>

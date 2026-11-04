@@ -20,7 +20,7 @@ public class TableController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetAll([FromQuery] TableState? state)
     {
         if (state.HasValue && !Enum.IsDefined(state.Value))
@@ -31,7 +31,7 @@ public class TableController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetById(int id)
     {
         var table = await _tableService.GetByIdAsync(id);
@@ -43,7 +43,7 @@ public class TableController : ControllerBase
     }
 
     [HttpGet("number/{number:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetByNumber(int number)
     {
         var table = await _tableService.GetByNumberAsync(number);
@@ -55,7 +55,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(int id, TableUpdateDto dto)
     {
         try
@@ -74,7 +74,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPatch("{id:int}/state")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> ChangeState(int id,ChangeTableStateDto dto)
     {
         try
@@ -93,7 +93,7 @@ public class TableController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         try
@@ -112,7 +112,7 @@ public class TableController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create(TableCreateDto dto)
     {
         try

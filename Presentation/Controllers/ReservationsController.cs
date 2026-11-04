@@ -18,7 +18,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetAll()
     {
         var reservations = await _service.GetAllAsync();
@@ -26,7 +26,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<ActionResult<ReservationDto>> GetById(int id)
     {
         var reservation = await _service.GetByIdAsync(id);
@@ -36,7 +36,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<ActionResult<ReservationDto>> Create([FromBody] CreateReservationDto dto)
     {
         var created = await _service.CreateAsync(dto);
@@ -44,7 +44,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto dto)
     {
         var result = await _service.UpdateAsync(id, dto);
@@ -54,7 +54,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var result = await _service.DeleteAsync(id);
@@ -64,7 +64,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> ChangeState(
         int id,
         ChangeReservationStateDto dto)

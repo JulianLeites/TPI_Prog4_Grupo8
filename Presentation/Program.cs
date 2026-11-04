@@ -96,6 +96,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<InitialAdminSeeder>();
+builder.Services.AddScoped<RoleSeeder>();
 
 builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
 
@@ -139,10 +140,15 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider
+    var roleSeeder = scope.ServiceProvider
+        .GetRequiredService<RoleSeeder>();
+
+    await roleSeeder.InitializeAsync();
+
+    var adminSeeder = scope.ServiceProvider
         .GetRequiredService<InitialAdminSeeder>();
 
-    await seeder.InitializeAsync(app.Configuration);
+    await adminSeeder.InitializeAsync(app.Configuration);
 }
 
 app.Run();
