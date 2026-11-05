@@ -20,6 +20,7 @@ public class OrderDetailController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> GetAll()
     {
         var orderDetails = await _orderDetailService.GetAllAsync();
@@ -27,6 +28,7 @@ public class OrderDetailController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> GetById(int id)
     {
         var orderDetail = await _orderDetailService.GetByIdAsync(id);
@@ -55,7 +57,8 @@ public class OrderDetailController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, CreateOrderDetailDto dto)
+    [Authorize(Roles = "Waiter,Admin")]
+    public async Task<IActionResult> Update(int id, OrderDetailUpdateDto dto)
     {
         try
         {
@@ -72,7 +75,27 @@ public class OrderDetailController : ControllerBase
         }
     }
 
+    [HttpPut("{id:int}/Quantity")]
+    [Authorize(Roles = "Waiter,Admin")]
+    public async Task<IActionResult> ChangeQuantity(int id, OrderDetailQuantityDto dto)
+    {
+        try
+        {
+            var orderDetail = await _orderDetailService.ChangeQuantityAsync(id, dto);
+
+            if (orderDetail is null)
+                return NotFound();
+
+            return Ok(orderDetail);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _orderDetailService.DeleteAsync(id);
@@ -84,6 +107,7 @@ public class OrderDetailController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> Create(CreateOrderDetailDto dto)
     {
         try
