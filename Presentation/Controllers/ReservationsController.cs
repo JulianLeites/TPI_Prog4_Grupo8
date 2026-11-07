@@ -83,4 +83,42 @@ public class ReservationsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("user/{userId:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByUserId(int userId)
+    {
+        var reservations = await _service.GetReservationsByUserIdAsync(userId);
+        return Ok(reservations);
+    }
+
+    [HttpGet("range")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByDateRange([FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
+    {
+        try
+        {
+            var reservations = await _service.GetReservationsByDateRangeAsync(startDate, endDate);
+            return Ok(reservations);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("state/{state}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByState(string state)
+    {
+        try
+        {
+            var reservations = await _service.GetReservationsByStateAsync(state);
+            return Ok(reservations);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
