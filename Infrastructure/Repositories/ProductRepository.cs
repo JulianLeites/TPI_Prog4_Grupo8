@@ -24,4 +24,20 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
             .Include(product => product.ProductCategory)
             .FirstOrDefaultAsync(product => product.Id == id);
     }
+    public async Task<IEnumerable<Product>> GetProductsByCategoryIdAsync(int categoryId)
+    {
+        return await _context.Products
+            .Include(p => p.ProductCategory)        
+            .Where(p => p.ProductCategoryId == categoryId)
+            .ToListAsync();
+            
+    }
+
+    public async Task<IEnumerable<Product>> GetProductsByNameAsync(string term)
+    {
+        return await _context.Products
+            .Include(p => p.ProductCategory)
+            .Where(p => EF.Functions.Like(p.Name, $"%{term}%"))
+            .ToListAsync();
+    }
 }

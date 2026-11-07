@@ -8,12 +8,12 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "admin")]
-public class ProudctController : ControllerBase
+//[Authorize(Roles = "admin")]
+public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
 
-    public ProudctController(IProductService productService)
+    public ProductController(IProductService productService)
     {
         _productService = productService;
     }
@@ -87,6 +87,42 @@ public class ProudctController : ControllerBase
 
     }
 
+    [HttpPatch]
+
+    public async Task<ActionResult> ChangePrice(int id, ProductPriceDto dto)
+    {
+        try
+        {
+            var product = await _productService.ChangePriceAsync(id, dto);
+
+            if(product is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
+
+
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+    }
+    [HttpGet("ProductCategory/{id:int}")]
+    public async Task<ActionResult> GetProductsByCategoryId(int id)
+    {
+        var products = await _productService.GetProductsByCategoryIdAsync(id);
+        return Ok(products); 
+    }
+
+    [HttpGet("{terms}")]
+    public async Task<ActionResult> GetProductsByName(string terms)
+    {
+        var products = await _productService.GetProductsByNameAsync(terms);
+        return Ok(products); 
+    }
     [HttpDelete]
 
     public async Task<ActionResult> Delete(int id)

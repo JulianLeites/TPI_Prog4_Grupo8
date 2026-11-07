@@ -20,3 +20,8 @@ public class ProductDto
     public string ImageUrl { get; set; } = string.Empty;
     public int ProductCategoryId { get; set; }
 }
+
+public class ProductPriceDto
+{
+    public decimal Price { get; set; }
+}
