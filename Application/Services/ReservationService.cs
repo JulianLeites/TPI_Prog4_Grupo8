@@ -5,6 +5,7 @@ using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Enums;
 
 namespace Application.Services;
 
@@ -131,4 +132,62 @@ public class ReservationService : IReservationService
         await _repository.DeleteAsync(reservation);
         return true;
     }
+
+    public async Task<IEnumerable<ReservationDto>> GetReservationsByUserIdAsync(int userId)
+    {
+        var reservations = await _repository.GetReservationsByUserIdAsync(userId);
+        return reservations.Select(r => new ReservationDto
+        {
+            Id = r.Id,
+            Date = r.Date,
+            Time = r.Time,
+            Diners = r.Diners,
+            UserId = r.UserId,
+            TableIds = r.Tables.Select(t => t.Id).ToList(),
+            State = r.State
+        });
+    }
+
+    public async Task<IEnumerable<ReservationDto>> GetReservationsByDateRangeAsync(DateOnly startDate, DateOnly endDate)
+    {
+        if (startDate > endDate)
+        {
+            throw new ArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+
+        var reservations = await _repository.GetReservationsByDateRangeAsync(startDate, endDate);
+        return reservations.Select(r => new ReservationDto
+        {
+            Id = r.Id,
+            Date = r.Date,
+            Time = r.Time,
+            Diners = r.Diners,
+            UserId = r.UserId,
+            TableIds = r.Tables.Select(t => t.Id).ToList(),
+            State = r.State
+        });
+    }
+
+
+    public async Task<IEnumerable<ReservationDto>> GetReservationsByStateAsync(string state)
+    {
+        if (!Enum.TryParse(state, out ReservationState parsedState))
+        {
+            throw new ArgumentException($"Estado de reserva inválido: {state}");
+        }
+        var reservations = await _repository.GetReservationsByStateAsync(parsedState);
+        return reservations.Select(r => new ReservationDto
+        {
+            Id = r.Id,
+            Date = r.Date,
+            Time = r.Time,
+            Diners = r.Diners,
+            UserId = r.UserId,
+            TableIds = r.Tables.Select(t => t.Id).ToList(),
+            State = r.State
+        });
+    }
+
+
+
 }
