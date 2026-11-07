@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
@@ -114,6 +115,63 @@ public class ProductService : IProductService
         };
     }
 
+    public async Task<ProductResponseDto?> ChangePriceAsync(int id, ProductPriceDto dto)
+    {
+        var product = await _productRepository.GetByIdAsync(id);
+
+        if (product is null)
+            return null;
+        if (dto.Price <= 0)
+            throw new ArgumentException("El precio debe ser mayor a 0");
+
+        
+        product.Price = dto.Price;
+
+        await _productRepository.UpdateAsync(product);
+
+        return new ProductResponseDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Description = product.Description,
+            ImageUrl = product.ImageUrl,
+            ProductCategoryId = product.ProductCategoryId,
+            ProductCategoryName = product.ProductCategory.Name
+        };
+    }
+
+    public async Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryIdAsync(int categoryId)
+    {
+        var products = await _productRepository.GetProductsByCategoryIdAsync(categoryId);
+
+        return products.Select(product => new ProductResponseDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Description = product.Description,
+            ImageUrl = product.ImageUrl,
+            ProductCategoryId = product.ProductCategoryId,
+            ProductCategoryName = product.ProductCategory.Name
+        });
+    }
+
+    public async Task<IEnumerable<ProductResponseDto>> GetProductsByNameAsync(string term)
+    {
+        var products = await _productRepository.GetProductsByNameAsync(term);
+
+        return products.Select(product => new ProductResponseDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Description = product.Description,
+            ImageUrl = product.ImageUrl,
+            ProductCategoryId = product.ProductCategoryId,
+            ProductCategoryName = product.ProductCategory.Name
+        });
+    }
     public async Task<bool> DeleteAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
