@@ -38,8 +38,15 @@ public class ProductCategoriesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProductCategoryDto>> Create([FromBody] CreateProductCategoryDto dto)
     {
-        var created = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        try
+        {
+            var created = await _service.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id:int}")]
@@ -54,9 +61,26 @@ public class ProductCategoriesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _service.DeleteAsync(id);
-        if (!result) return NotFound();
+        try
+        {
+            var result = await _service.DeleteAsync(id);
+            if (!result) return NotFound();
 
-        return NoContent();
+            return NoContent();
+        }
+
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:int}/with-products")]
+    public async Task<ActionResult<ProductCategoryWithProductsDto>> GetCategoryWithProducts(int id)
+    {
+        var category = await _service.GetCategoryWithProductsAsync(id);
+        if (category is null) return NotFound();
+
+        return Ok(category);
     }
 }

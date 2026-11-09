@@ -43,9 +43,15 @@ public class ProductCategoryService : IProductCategoryService
 
     public async Task<ProductCategoryDto> CreateAsync(CreateProductCategoryDto dto)
     {
+        var exists = await _repository.ExistsByNameAsync(dto.Name);
+        if (exists)
+        {
+            throw new ArgumentException($"Ya existe una categoría con el nombre '{dto.Name}'.");
+        }
+
         var entity = new ProductCategory
         {
-            Name = dto.Name
+            Name = dto.Name.Trim()
         };
 
         await _repository.AddAsync(entity);
@@ -70,11 +76,37 @@ public class ProductCategoryService : IProductCategoryService
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var category = await _repository.GetByIdAsync(id);
+        var category = await _repository.GetCategoryWithProductsAsync(id);
         if (category == null) return false;
 
-        await _repository.DeleteAsync(category);
+        if (category.Products != null && category.Products.Any())
+        {
+            throw new InvalidOperationException("No se puede eliminar la categoría porque tiene productos asociados.");
+        }
 
+        await _repository.DeleteAsync(category);
         return true;
+    }
+
+    public async Task<ProductCategoryWithProductsDto?> GetCategoryWithProductsAsync(int categoryId)
+    {
+        var category = await _repository.GetCategoryWithProductsAsync(categoryId);
+        if (category is null) return null;
+
+        return new ProductCategoryWithProductsDto
+        {
+            Id = category.Id,
+            Name = category.Name,
+            Products = category.Products.Select(p => new ProductResponseDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Price = p.Price,
+                Description = p.Description,
+                ImageUrl = p.ImageUrl,
+                ProductCategoryId = p.ProductCategoryId,
+                ProductCategoryName = category.Name
+            }).ToList()
+        };
     }
 }
