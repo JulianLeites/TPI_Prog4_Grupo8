@@ -76,6 +76,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}/with-products")]
+    [AllowAnonymous]
     public async Task<ActionResult<ProductCategoryWithProductsDto>> GetCategoryWithProducts(int id)
     {
         var category = await _service.GetCategoryWithProductsAsync(id);
