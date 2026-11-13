@@ -85,7 +85,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("user/{userId:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByUserId(int userId)
     {
         var reservations = await _service.GetReservationsByUserIdAsync(userId);
@@ -93,7 +93,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("range")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByDateRange([FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
     {
         try
@@ -108,7 +108,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("state/{state}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByState(string state)
     {
         try
