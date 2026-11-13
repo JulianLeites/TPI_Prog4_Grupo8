@@ -8,7 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize(Roles = "admin")]
+[Authorize(Roles = "Admin")]
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -19,7 +19,6 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous]
     public async Task<ActionResult> GetAll()
     {
         var products = await _productService.GetAllAsync();
@@ -28,7 +27,6 @@ public class ProductController : ControllerBase
 
 
     [HttpGet("{id:int}")]
-    [AllowAnonymous]
     public async Task<ActionResult> GetById([FromRoute] int id)
     {
         var product = await _productService.GetByIdAsync(id);
@@ -65,7 +63,7 @@ public class ProductController : ControllerBase
 
     [HttpPut]
 
-    public async Task<ActionResult> Update(int id, ProductDto dto)
+    public async Task<ActionResult> Update(int id, ProductUpdateDto dto)
     {
         try
         {

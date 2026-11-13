@@ -56,8 +56,17 @@ public class ProductService : IProductService
     {
         var category = await _productCategoryRepository.GetByIdAsync(dto.ProductCategoryId);
 
+
+
         if (category is null)
             throw new ArgumentException("La categoria no existe");
+
+        var existingProduct = await _productRepository.GetExistingProductAsync(dto.Name);
+        if (existingProduct != null){
+            throw new ArgumentException("Ya existe un producto con ese nombre");
+        }
+        if (dto.Price <= 0)
+            throw new ArgumentException("El precio debe ser mayor a 0");
 
         var product = new Product
         {
@@ -82,7 +91,7 @@ public class ProductService : IProductService
         };
     }
 
-    public async Task<ProductResponseDto?> UpdateAsync(int Id, ProductDto dto)
+    public async Task<ProductResponseDto?> UpdateAsync(int Id, ProductUpdateDto dto)
     {
         var category = await _productCategoryRepository.GetByIdAsync(dto.ProductCategoryId);
 
@@ -97,7 +106,6 @@ public class ProductService : IProductService
         }
 
         product.Name = dto.Name;
-        product.Price = dto.Price;
         product.Description = dto.Description;
         product.ImageUrl = dto.ImageUrl;
         product.ProductCategoryId = dto.ProductCategoryId;

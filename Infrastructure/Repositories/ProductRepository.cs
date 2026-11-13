@@ -40,4 +40,10 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
             .Where(p => EF.Functions.Like(p.Name, $"%{term}%"))
             .ToListAsync();
     }
+
+    public async Task<Product?> GetExistingProductAsync(string name)
+    {
+        return await _context.Products
+            .FirstOrDefaultAsync(p => p.Name == name);
+    }
 }

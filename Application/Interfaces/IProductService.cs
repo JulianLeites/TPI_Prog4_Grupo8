@@ -6,7 +6,7 @@ public interface IProductService
     Task<IEnumerable<ProductResponseDto>> GetAllAsync();
     Task<ProductResponseDto?> GetByIdAsync(int id);
     Task<ProductResponseDto> CreateAsync(ProductDto dto);
-    Task<ProductResponseDto?> UpdateAsync(int id, ProductDto dto);
+    Task<ProductResponseDto?> UpdateAsync(int id, ProductUpdateDto dto);
 
     Task<ProductResponseDto?> ChangePriceAsync(int id, ProductPriceDto dto);
     Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryIdAsync(int categoryId);

@@ -21,6 +21,14 @@ public class ProductDto
     public int ProductCategoryId { get; set; }
 }
 
+public class ProductUpdateDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
+    public int ProductCategoryId { get; set; }
+}
+
 public class ProductPriceDto
 {
     public decimal Price { get; set; }
