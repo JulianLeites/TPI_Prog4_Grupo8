@@ -42,4 +42,14 @@ public class UserRepository
             .Where(user => user.RoleId == roleId)
             .ToListAsync();
     }
+
+    public async Task<bool> HasReservationsAsync(int userId)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var currentTime = TimeOnly.FromDateTime(DateTime.Now);
+
+        return await _context.Reservations.AnyAsync(r => r.UserId == userId &&
+        (r.Date > today ||
+        (r.Date == today && r.Time >= currentTime)));
+    }
 }

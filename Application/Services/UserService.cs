@@ -74,10 +74,10 @@ public class UserService : IUserService
         if (existingUser is not null && existingUser.Id != id)
             throw new ArgumentException("El email ya esta registrado por otro usuario");
 
-        user.Name = dto.Name;
-        user.Surname = dto.Surname;
+        user.Name = dto.Name.Trim();
+        user.Surname = dto.Surname.Trim();
         user.Email = email;
-        user.PhoneNumber = dto.PhoneNumber;
+        user.PhoneNumber = dto.PhoneNumber.Trim();
 
         await _userRepository.UpdateAsync(user);
 
@@ -100,6 +100,11 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
+        var hasReservations = await _userRepository.HasReservationsAsync(id);
+
+        if(hasReservations)
+            throw new InvalidOperationException("No se puede eliminar un usuario con reservas futuras")
+
         await _userRepository.DeleteAsync(user);
         return true;
     }
@@ -120,10 +125,10 @@ public class UserService : IUserService
 
         var user = new User
         {
-            Name = dto.Name,
-            Surname = dto.Surname,
+            Name = dto.Name.Trim(),
+            Surname = dto.Surname.Trim(),
             Email = email,
-            PhoneNumber = dto.PhoneNumber,
+            PhoneNumber = dto.PhoneNumber.Trim(),
             RoleId = dto.RoleId,
             Password = _passwordHasher.HashPassword(dto.Password)
         };
@@ -176,7 +181,8 @@ public class UserService : IUserService
         if (role is null)
             throw new ArgumentException("El rol seleccionado no existe");
 
-        user.RoleId = dto.RoleId;
+        user.RoleId = role.Id;
+        user.Role = role;
 
         await _userRepository.UpdateAsync(user);
 

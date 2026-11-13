@@ -114,12 +114,19 @@ public class UserController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _userService.DeleteAsync(id);
+        try
+        {
+            var deleted = await _userService.DeleteAsync(id);
 
-        if (!deleted)
-            return NotFound();
+            if (!deleted)
+                return NotFound();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     [HttpDelete("me")]
