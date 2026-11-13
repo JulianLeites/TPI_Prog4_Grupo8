@@ -13,11 +13,13 @@ public class ReservationService : IReservationService
 {
     private readonly IReservationRepository _repository;
     private readonly ITableRepository _tableRepository;
+    private readonly IUserRepository _userRepository;
 
-    public ReservationService(IReservationRepository repository, ITableRepository tableRepository)
+    public ReservationService(IReservationRepository repository, ITableRepository tableRepository, IUserRepository userRepository)
     {
         _repository = repository;
         _tableRepository = tableRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<IEnumerable<ReservationDto>> GetAllAsync()
@@ -55,25 +57,85 @@ public class ReservationService : IReservationService
 
     public async Task<ReservationDto> CreateAsync(CreateReservationDto dto)
     {
+        if (dto.Diners < 1)
+            throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
+        var reservationDateTime = dto.Date.ToDateTime(dto.Time);
+
+        if (reservationDateTime <= DateTime.Now)
+            throw new ArgumentException("La fecha y hora de la reserva deben ser posteriores al actual.");
+
+        var user = await _userRepository.GetByIdAsync(dto.UserId);
+        if (user is null)
+            throw new ArgumentException($"No existe un usuario con ID {dto.UserId}.");
+
+        var occupiedTableIds = await _repository.GetOccupiedTableIdsAsync(dto.Date, dto.Time);
+        var allTables = (await _tableRepository.GetAllAsync()).ToList();
+
+        var assignedTables = new List<Table>();
+
+        if (dto.TableIds is not null && dto.TableIds.Any())
+        {
+            // Selección manual de mesas
+            var distinctIds = dto.TableIds.Distinct().ToList();
+
+            foreach (var tableId in distinctIds)
+            {
+                var table = allTables.FirstOrDefault(t => t.Id == tableId);
+                if (table is null)
+                    throw new ArgumentException($"No existe una mesa con ID {tableId}.");
+
+                if (occupiedTableIds.Contains(tableId))
+                    throw new InvalidOperationException($"La mesa {table.Number} no está disponible en ese horario.");
+
+                assignedTables.Add(table);
+            }
+
+            int totalCapacity = assignedTables.Sum(t => t.Capacity);
+            if (totalCapacity < dto.Diners)
+                throw new ArgumentException($"La capacidad total de las mesas seleccionadas ({totalCapacity}) es menor a la cantidad de comensales ({dto.Diners}).");
+        }
+        else
+        {
+            // Asignación automática para clientes
+            var freeTables = allTables
+                .Where(t => !occupiedTableIds.Contains(t.Id))
+                .OrderBy(t => t.Capacity)
+                .ToList();
+
+            // Mesa individual más chica que cubra los comensales
+            var singleBestTable = freeTables.FirstOrDefault(t => t.Capacity >= dto.Diners);
+
+            if (singleBestTable is not null)
+            {
+                assignedTables.Add(singleBestTable);
+            }
+            else
+            {
+                // Usar mesas libres de mayor a menor capacidad hasta cubrir comensales
+                int accumulatedCapacity = 0;
+                foreach (var table in freeTables.OrderByDescending(t => t.Capacity))
+                {
+                    assignedTables.Add(table);
+                    accumulatedCapacity += table.Capacity;
+                    if (accumulatedCapacity >= dto.Diners)
+                        break;
+                }
+
+                if (accumulatedCapacity < dto.Diners)
+                    throw new InvalidOperationException("No hay mesas disponibles con capacidad suficiente para esa fecha y horario.");
+            }
+        }
+
         var entity = new Reservation
         {
             Date = dto.Date,
             Time = dto.Time,
             Diners = dto.Diners,
             UserId= dto.UserId,
-            State = dto.State
+            State = ReservationState.Confirmed,
+            Tables = assignedTables
+
         };
-
-        foreach (var tableId in dto.TableIds)
-        {
-            var table = await _tableRepository.GetByIdAsync(tableId);
-
-            if (table is null)
-                throw new ArgumentException(
-                    $"No existe una mesa con ID {tableId}.");
-
-            entity.Tables.Add(table);
-        }
 
         await _repository.AddAsync(entity);
 
@@ -84,15 +146,32 @@ public class ReservationService : IReservationService
             Time = entity.Time,
             Diners = entity.Diners,
             UserId = entity.UserId,
-            TableIds = entity.Tables.Select(t => t.Id).ToList()
+            TableIds = entity.Tables.Select(t => t.Id).ToList(),
+            State = entity.State
         };
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateReservationDto dto)
     {
         var reservation = await _repository.GetByIdAsync(id);
-        if (reservation == null) return false;
+        if (reservation is null) return false;
 
+        if (dto.Diners < 1)
+            throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
+        
+        if (dto.Date.ToDateTime(dto.Time) <= DateTime.Now)
+            throw new ArgumentException("La fecha y hora de la reserva deben ser posteriores al momento actual.");
+
+        int currentCapacity = reservation.Tables.Sum(t => t.Capacity);
+        if (currentCapacity < dto.Diners)
+            throw new ArgumentException($"Las mesas asignadas tienen capacidad para {currentCapacity} personas, insuficiente para {dto.Diners} comensales.");
+
+        var occupiedIds = await _repository.GetOccupiedTableIdsAsync(dto.Date, dto.Time, excludeReservationId: id);
+        var conflictingTable = reservation.Tables.FirstOrDefault(t => occupiedIds.Contains(t.Id));
+
+        if (conflictingTable is not null)
+            throw new InvalidOperationException($"No se puede asignar ese horario porque no estan disponibles las mesas .");
+        
         reservation.Date = dto.Date;
         reservation.Time = dto.Time;
         reservation.Diners = dto.Diners;
@@ -188,6 +267,24 @@ public class ReservationService : IReservationService
         });
     }
 
+    public async Task<IEnumerable<TableDto>> GetAvailableTablesAsync(DateOnly date, TimeOnly time, int diners)
+    {
+        if (diners < 1)
+            throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
 
+        var occupiedIds = await _repository.GetOccupiedTableIdsAsync(date, time);
+        var allTables = await _tableRepository.GetAllAsync();
+
+        return allTables
+            .Where(t => !occupiedIds.Contains(t.Id))
+            .OrderBy(t => t.Number)
+            .Select(t => new TableDto
+            {
+                Id = t.Id,
+                Number = t.Number,
+                Capacity = t.Capacity,
+                State = t.State
+            });
+    }
 
 }
