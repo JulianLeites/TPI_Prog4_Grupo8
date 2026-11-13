@@ -22,7 +22,7 @@ public class InitialAdminSeeder
     public async Task InitializeAsync(IConfiguration configuration)
     {
         var adminRole = await _context.Roles
-            .SingleOrDefaultAsync(r => r.Name == "Admin");
+            .SingleOrDefaultAsync(r => r.Name == "admin");
 
         if (adminRole is null)
             throw new InvalidOperationException("No existe el rol Admin");

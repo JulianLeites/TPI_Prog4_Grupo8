@@ -123,6 +123,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpGet("search/{terms}")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetProductsByName(string terms)
     {
         var products = await _productService.GetProductsByNameAsync(terms);

@@ -17,6 +17,9 @@ public class TableService : ITableService
 
     public async Task<IEnumerable<TableDto>> GetAllAsync(TableState? state)
     {
+        if (state.HasValue && !Enum.IsDefined(typeof(TableState), state.Value))
+            throw new ArgumentException("El estado de la mesa no es válido.");
+
         var tables = state.HasValue 
             ? await _tableRepository.GetByStateAsync(state.Value)
             : await _tableRepository.GetAllAsync();
@@ -64,6 +67,9 @@ public class TableService : ITableService
 
     public async Task<TableDto?> UpdateAsync(int id, TableUpdateDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
         var table = await _tableRepository.GetByIdAsync(id);
 
         if (table is null)
@@ -100,6 +106,9 @@ public class TableService : ITableService
         if (table is null)
             return false;
 
+        if (table.State == TableState.Occupied)
+            throw new InvalidOperationException("No se puede eliminar una mesa que está ocupada.");
+
         var now = DateTime.Now;
         var date = DateOnly.FromDateTime(now);
         var time = TimeOnly.FromDateTime(now);
@@ -115,6 +124,9 @@ public class TableService : ITableService
 
     public async Task<TableDto> CreateAsync(TableCreateDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
         if (dto.Capacity < 1)
             throw new ArgumentException("La capacidad debe ser minimo 1.");
         
@@ -143,6 +155,12 @@ public class TableService : ITableService
 
     public async Task<TableDto?> ChangeStateAsync(int id, ChangeTableStateDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
+        if (!Enum.IsDefined(typeof(TableState), dto.State))
+            throw new ArgumentException("El estado de la mesa no es válido.");
+
         var table = await _tableRepository.GetByIdAsync(id);
 
         if (table is null)

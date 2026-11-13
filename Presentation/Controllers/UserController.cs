@@ -1,8 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
-using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -164,9 +162,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPatch("me/password")]
-    public async Task<IActionResult> ChangePassword(
-        int id,
-        ChangePasswordDto dto)
+    public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -176,12 +172,7 @@ public class UserController : ControllerBase
             return Unauthorized();
         }
 
-        if (id != userId)
-        {
-            return Forbid();
-        }
-
-        var changed = await _userService.ChangePasswordAsync(id, dto);
+        var changed = await _userService.ChangePasswordAsync(userId, dto);
 
         if (!changed)
             return BadRequest(new

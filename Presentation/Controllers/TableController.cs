@@ -32,8 +32,11 @@ public class TableController : ControllerBase
 
     [HttpGet("{id:int}")]
     [Authorize(Roles = "waiter,admin")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById([FromRoute] int id)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         var table = await _tableService.GetByIdAsync(id);
 
         if (table is null)
@@ -44,8 +47,11 @@ public class TableController : ControllerBase
 
     [HttpGet("number/{number:int}")]
     [Authorize(Roles = "waiter,admin")]
-    public async Task<IActionResult> GetByNumber(int number)
+    public async Task<IActionResult> GetByNumber([FromRoute] int number)
     {
+        if (number <= 0)
+            return BadRequest(new { message = "El numero de mesa debe ser mayor que cero." });
+
         var table = await _tableService.GetByNumberAsync(number);
 
         if (table is null)
@@ -56,8 +62,11 @@ public class TableController : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> Update(int id, TableUpdateDto dto)
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] TableUpdateDto dto)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         try
         {
             var table = await _tableService.UpdateAsync(id, dto);
@@ -75,8 +84,11 @@ public class TableController : ControllerBase
 
     [HttpPatch("{id:int}/state")]
     [Authorize(Roles = "waiter,admin")]
-    public async Task<IActionResult> ChangeState(int id,ChangeTableStateDto dto)
+    public async Task<IActionResult> ChangeState([FromRoute] int id,[FromBody] ChangeTableStateDto dto)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         try
         {
             var table = await _tableService.ChangeStateAsync(id, dto);
@@ -94,8 +106,11 @@ public class TableController : ControllerBase
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete([FromRoute] int id)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         try
         {
             var deleted = await _tableService.DeleteAsync(id);
@@ -113,7 +128,7 @@ public class TableController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> Create(TableCreateDto dto)
+    public async Task<IActionResult> Create([FromBody] TableCreateDto dto)
     {
         try
         {

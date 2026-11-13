@@ -69,7 +69,7 @@ public class AuthService : IAuthService
 
     public async Task<string?> LoginAsync(LoginDto loginDto)
     {
-        var user = await _userRepository.GetByEmailAsync(loginDto.Email.Trim());
+        var user = await _userRepository.GetByEmailAsync(loginDto.Email.Trim().ToLowerInvariant());
 
         if (user is null)
             return null;
