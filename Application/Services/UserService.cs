@@ -102,8 +102,8 @@ public class UserService : IUserService
 
         var hasReservations = await _userRepository.HasReservationsAsync(id);
 
-        if(hasReservations)
-            throw new InvalidOperationException("No se puede eliminar un usuario con reservas futuras")
+        if (hasReservations)
+            throw new InvalidOperationException("No se puede eliminar un usuario con reservas futuras");
 
         await _userRepository.DeleteAsync(user);
         return true;
