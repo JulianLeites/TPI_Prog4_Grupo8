@@ -1,8 +1,8 @@
 ﻿using Application.Interfaces;
+using MailKit.Net.Smtp;
 using MailKit.Security;
-using MimeKit;
 using Microsoft.Extensions.Configuration;
-using System.Net.Mail;
+using MimeKit;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -54,7 +54,7 @@ public class EmailService : IEmailService
         );
 
         await client.AuthenticateAsync(senderEmail, senderPassword);
-        await client.SendAsync(message);
+        await client.SendAsync(new SmtpSendRequest(message));
         await client.DisconnectAsync(true);
     }
 }

@@ -3,9 +3,6 @@ using Domain.Enums;
 using Domain.Interfaces;
 using Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Infrastructure.Repositories;
 

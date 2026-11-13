@@ -89,7 +89,7 @@ public class OrderDetailService : IOrderDetailService
         if (orderDetail is null)
             return null;
 
-        var product = await _productRepository.GetByIdAsync(orderDetail.Product_id);
+        var product = await _productRepository.GetByIdAsync(dto.Product_id);
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
     
         if (product is null)

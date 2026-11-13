@@ -8,7 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize(Roles = "admin")]
+[Authorize(Roles = "admin")]
 public class ProductController : ControllerBase
 {
     private readonly IProductService _productService;
@@ -31,7 +31,11 @@ public class ProductController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult> GetById([FromRoute] int id)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El Id debe ser mayor que cero" });
+
         var product = await _productService.GetByIdAsync(id);
+
         if(product is null)
         {
             return NotFound();
@@ -41,8 +45,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
-
-    public async Task<ActionResult> Create(ProductDto dto)
+    public async Task<ActionResult> Create([FromBody] ProductDto dto)
     {
         try
         {
@@ -63,10 +66,12 @@ public class ProductController : ControllerBase
 
     }
 
-    [HttpPut]
-
-    public async Task<ActionResult> Update(int id, ProductDto dto)
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult> Update([FromRoute]int id, [FromBody] ProductDto dto)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         try
         {
             var product = await _productService.UpdateAsync(id, dto);
@@ -87,22 +92,20 @@ public class ProductController : ControllerBase
 
     }
 
-    [HttpPatch]
-
-    public async Task<ActionResult> ChangePrice(int id, ProductPriceDto dto)
+    [HttpPatch("{id:int}/price")]
+    public async Task<ActionResult> ChangePrice([FromRoute]int id, [FromBody] ProductPriceDto dto)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         try
         {
             var product = await _productService.ChangePriceAsync(id, dto);
 
             if(product is null)
-            {
                 return NotFound();
-            }
 
             return Ok(product);
-
-
         }
         catch (ArgumentException ex)
         {
@@ -110,28 +113,34 @@ public class ProductController : ControllerBase
         }
 
     }
+
     [HttpGet("ProductCategory/{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetProductsByCategoryId(int id)
     {
         var products = await _productService.GetProductsByCategoryIdAsync(id);
         return Ok(products); 
     }
 
-    [HttpGet("{terms}")]
+    [HttpGet("search/{terms}")]
+    [AllowAnonymous]
     public async Task<ActionResult> GetProductsByName(string terms)
     {
         var products = await _productService.GetProductsByNameAsync(terms);
         return Ok(products); 
     }
-    [HttpDelete]
-
-    public async Task<ActionResult> Delete(int id)
+    
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete([FromRoute] int id)
     {
+        if (id <= 0)
+            return BadRequest(new { message = "El ID debe ser mayor que cero." });
+
         var deleted = await _productService.DeleteAsync(id);
+
         if (!deleted)
-        {
             return NotFound();
-        }
+
         return NoContent();
     }
 

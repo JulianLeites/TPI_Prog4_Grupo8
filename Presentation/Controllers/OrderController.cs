@@ -109,7 +109,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("Table/{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetOrdersByTableId(int id)
     {
         var orderDetails = await _orderService.GetOrdersByTableIdAsync(id);
@@ -117,7 +117,7 @@ public class OrderController : ControllerBase
         return Ok(orderDetails);
     }
     [HttpGet("State/InPreparation")]
-    [Authorize(Roles = "Waiter,Admin,Kitchen")]
+    [Authorize(Roles = "waiter,admin,kitchen")]
     public async Task<IActionResult> GetOrdersInPreparation()
     {
         var orderDetails = await _orderService.GetOrdersInPreparationAsync();

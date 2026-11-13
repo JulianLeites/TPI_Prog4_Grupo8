@@ -28,12 +28,14 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     public async Task<IEnumerable<Order>> GetOrdersByTableIdAsync(int tableId)
     {
         return await _context.Orders
+            .Include(o => o.Details)
             .Where(od => od.Table_id == tableId)
             .ToListAsync();
     }
     public async Task<IEnumerable<Order>> GetOrdersInPreparationAsync()
     {
         return await _context.Orders
+            .Include (o => o.Details)
             .Where(od => od.State == 0)
             .ToListAsync();
     }

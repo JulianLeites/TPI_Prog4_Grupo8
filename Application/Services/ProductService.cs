@@ -1,4 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
 using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
@@ -17,6 +16,41 @@ public class ProductService : IProductService
     {
         _productRepository = repository;
         _productCategoryRepository = productCategoryRepository;
+    }
+
+    private async Task<ProductCategory> ValidateProductAsync(ProductDto dto)
+    {
+        if(dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("El nombre del producto es obligatorio");
+
+        var name = dto.Name.Trim();
+
+        if (name.Length < 2 || name.Length > 100)
+            throw new ArgumentException("El nombre debe tener entre 2 y 100 caracteres");
+
+        if (dto.Price <= 0)
+            throw new ArgumentException("El precio debe ser mayor que cero");
+
+        var description = dto.Description.Trim();
+
+        if (description.Length > 500)
+            throw new ArgumentException("La descripcion no debe superar los 500 caracteres");
+
+        if (string.IsNullOrWhiteSpace(dto.ImageUrl))
+            throw new ArgumentException("La URL de la imagen es obligatoria");
+
+        if (dto.ProductCategoryId <= 0)
+            throw new ArgumentException("El ID de la categoria debe ser mayor a cero");
+
+        var category = await _productCategoryRepository.GetByIdAsync(dto.ProductCategoryId);
+
+        if (category is null)
+            throw new ArgumentException("La categoria seleccionada no existe");
+
+        return category;
     }
 
     public async Task<IEnumerable<ProductResponseDto>> GetAllAsync()
@@ -52,12 +86,10 @@ public class ProductService : IProductService
             ProductCategoryName = product.ProductCategory.Name
         };
     }
+
     public async Task<ProductResponseDto> CreateAsync(ProductDto dto)
     {
-        var category = await _productCategoryRepository.GetByIdAsync(dto.ProductCategoryId);
-
-        if (category is null)
-            throw new ArgumentException("La categoria no existe");
+        var category = await ValidateProductAsync(dto);
 
         var product = new Product
         {
@@ -66,6 +98,7 @@ public class ProductService : IProductService
             Description = dto.Description,
             ImageUrl = dto.ImageUrl,
             ProductCategoryId = dto.ProductCategoryId,
+            ProductCategory = category
         };
 
         await _productRepository.AddAsync(product);
@@ -78,17 +111,12 @@ public class ProductService : IProductService
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
-            ProductCategoryName = product.ProductCategory.Name
+            ProductCategoryName = category.Name
         };
     }
 
     public async Task<ProductResponseDto?> UpdateAsync(int Id, ProductDto dto)
     {
-        var category = await _productCategoryRepository.GetByIdAsync(dto.ProductCategoryId);
-
-        if (category is null)
-            throw new ArgumentException("La categoria no existe");
-
         var product = await _productRepository.GetByIdAsync(Id);
 
         if(product is null)
@@ -96,13 +124,17 @@ public class ProductService : IProductService
             return null;
         }
 
+        var category = await ValidateProductAsync(dto);
+
         product.Name = dto.Name;
         product.Price = dto.Price;
         product.Description = dto.Description;
         product.ImageUrl = dto.ImageUrl;
         product.ProductCategoryId = dto.ProductCategoryId;
+        product.ProductCategory = category;
 
         await _productRepository.UpdateAsync(product);
+
         return new ProductResponseDto
         {
             Id = product.Id,
@@ -111,19 +143,22 @@ public class ProductService : IProductService
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
-            ProductCategoryName = product.ProductCategory.Name
+            ProductCategoryName = category.Name
         };
     }
 
     public async Task<ProductResponseDto?> ChangePriceAsync(int id, ProductPriceDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
+        if (dto.Price <= 0)
+            throw new ArgumentException("El precio debe ser mayor a 0");
+
         var product = await _productRepository.GetByIdAsync(id);
 
         if (product is null)
             return null;
-        if (dto.Price <= 0)
-            throw new ArgumentException("El precio debe ser mayor a 0");
-
         
         product.Price = dto.Price;
 
@@ -172,6 +207,7 @@ public class ProductService : IProductService
             ProductCategoryName = product.ProductCategory.Name
         });
     }
+    
     public async Task<bool> DeleteAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
