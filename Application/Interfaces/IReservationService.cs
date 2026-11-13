@@ -17,4 +17,5 @@ public interface IReservationService
     Task<IEnumerable<ReservationDto>> GetReservationsByUserIdAsync(int userId);
     Task<IEnumerable<ReservationDto>> GetReservationsByDateRangeAsync(DateOnly startDate, DateOnly endDate);
     Task<IEnumerable<ReservationDto>> GetReservationsByStateAsync(string state);
+    Task<IEnumerable<TableDto>> GetAvailableTablesAsync(DateOnly date, TimeOnly time, int diners);
 }

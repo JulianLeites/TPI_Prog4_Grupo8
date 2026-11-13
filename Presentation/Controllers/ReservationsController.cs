@@ -1,7 +1,8 @@
 ﻿using Application.Interfaces;
 using Application.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Presentation.Controllers;
 
@@ -34,24 +35,75 @@ public class ReservationsController : ControllerBase
 
         return Ok(reservation);
     }
+    
+    [HttpGet("available-tables")]
+    [Authorize(Roles = "waiter,admin,user")]
+    public async Task<ActionResult<IEnumerable<TableDto>>> GetAvailableTables(
+        [FromQuery] DateOnly date,
+        [FromQuery] TimeOnly time,
+        [FromQuery] int diners = 1)
+    {
+        try
+        {
+            var tables = await _service.GetAvailableTablesAsync(date, time, diners);
+            return Ok(tables);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPost]
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<ActionResult<ReservationDto>> Create([FromBody] CreateReservationDto dto)
     {
-        var created = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        if (User.IsInRole("user"))
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int loggedUserId))
+                return Unauthorized();
+
+            dto.UserId = loggedUserId;
+        }
+        try
+        {
+            var created = await _service.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
+
 
     [HttpPut("{id:int}")]
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto dto)
     {
-        var result = await _service.UpdateAsync(id, dto);
-        if (!result) return NotFound();
+        try
+        {
+            var result = await _service.UpdateAsync(id, dto);
+            if (!result) return NotFound();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
+    
+
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "admin")]
@@ -85,7 +137,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("user/{userId:int}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "waiter,user,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByUserId(int userId)
     {
         var reservations = await _service.GetReservationsByUserIdAsync(userId);
@@ -93,7 +145,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("range")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByDateRange([FromQuery] DateOnly startDate, [FromQuery] DateOnly endDate)
     {
         try
@@ -108,7 +160,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("state/{state}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByState(string state)
     {
         try
