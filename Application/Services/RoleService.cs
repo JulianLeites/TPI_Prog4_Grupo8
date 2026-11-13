@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Interfaces;
 using System;
@@ -13,10 +14,10 @@ public class RoleService : IRoleService
     private readonly IRoleRepository _roleRepository;
     private static readonly HashSet<int> ProtectedRoleIds = new()
     {
-        1, // admin
-        2, // waiter
-        3, // kitchen
-        4 // user
+        RoleIds.Admin,
+        RoleIds.Waiter,
+        RoleIds.Kitchen,
+        RoleIds.User
     };
 
     public RoleService(IRoleRepository roleRepository)

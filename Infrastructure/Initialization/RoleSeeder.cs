@@ -1,9 +1,7 @@
-﻿using Domain.Entities;
+﻿using Domain.Constants;
+using Domain.Entities;
 using Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Infrastructure.Initialization;
 
@@ -19,10 +17,10 @@ public class RoleSeeder
     {
         var requiredRoles = new List<Role>
         {
-            new Role { Id = 1, Name = "admin" },
-            new Role { Id = 2, Name = "waiter" },
-            new Role { Id = 3, Name = "kitchen" },
-            new Role { Id = 4, Name = "user" }
+            new Role { Id = RoleIds.Admin, Name = "admin" },
+            new Role { Id = RoleIds.Waiter, Name = "waiter" },
+            new Role { Id = RoleIds.Kitchen, Name = "kitchen" },
+            new Role { Id = RoleIds.User, Name = "user" }
         };
 
         foreach(var requiredRole in requiredRoles)
