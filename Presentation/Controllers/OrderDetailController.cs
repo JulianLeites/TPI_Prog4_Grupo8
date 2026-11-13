@@ -75,7 +75,7 @@ public class OrderDetailController : ControllerBase
         }
     }
 
-    [HttpPut("{id:int}/Quantity")]
+    [HttpPatch("{id:int}/Quantity")]
     [Authorize(Roles = "Waiter,Admin")]
     public async Task<IActionResult> ChangeQuantity(int id, OrderDetailQuantityDto dto)
     {

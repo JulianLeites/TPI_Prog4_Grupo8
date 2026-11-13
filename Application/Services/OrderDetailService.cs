@@ -89,7 +89,7 @@ public class OrderDetailService : IOrderDetailService
         if (orderDetail is null)
             return null;
 
-        var product = await _productRepository.GetByIdAsync(id);
+        var product = await _productRepository.GetByIdAsync(orderDetail.Product_id);
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
     
         if (product is null)
@@ -99,7 +99,6 @@ public class OrderDetailService : IOrderDetailService
 
         orderDetail.Product_id = dto.Product_id;
         orderDetail.UnitPrice = product.Price;
-        orderDetail.Quantity = dto.Quantity;
         orderDetail.Subtotal = orderDetail.CalculateSubtotal();
 
         await _orderDetailRepository.UpdateAsync(orderDetail);
@@ -177,6 +176,24 @@ public class OrderDetailService : IOrderDetailService
         var order = await _orderRepository.GetByIdAsync(dto.Order_id);
         if(order is null){
             throw new ArgumentException($"La orden con id {dto.Order_id} no existe");
+        }
+        if (dto.Quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a 0");
+        var existingDetail = await _orderDetailRepository.GetExistingDetailAsync(dto.Order_id, dto.Product_id);
+        if(existingDetail != null){
+            existingDetail.Quantity += dto.Quantity;
+            existingDetail.Subtotal = existingDetail.CalculateSubtotal();
+            await _orderDetailRepository.UpdateAsync(existingDetail);
+
+            return new OrderDetailDto
+            {
+                Id = existingDetail.Id,
+                Quantity = existingDetail.Quantity,
+                UnitPrice = existingDetail.UnitPrice,
+                Subtotal = existingDetail.Subtotal,
+                Product_id = existingDetail.Product_id,
+                Order_id = existingDetail.Order_id
+            };
         }
 
         var orderDetail = new OrderDetail

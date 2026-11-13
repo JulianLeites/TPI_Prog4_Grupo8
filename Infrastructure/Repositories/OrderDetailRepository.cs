@@ -26,4 +26,11 @@ public class OrderDetailRepository : GenericRepository<OrderDetail> , IOrderDeta
             .Where(od => od.Product_id == productId)
             .ToListAsync();
     }
+
+    public async Task<OrderDetail?> GetExistingDetailAsync(int orderId, int productId)
+    {
+        return await _context.OrderDetails
+            .FirstOrDefaultAsync(orderDetail => orderDetail.Order_id == orderId && orderDetail.Product_id == productId);
+
+    }
 } 

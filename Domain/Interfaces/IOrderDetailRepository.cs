@@ -7,4 +7,6 @@ public interface IOrderDetailRepository : IGenericRepository<OrderDetail>
     Task<List<OrderDetail>> GetDetailsByOrderIdAsync(int orderId);
 
     Task<List<OrderDetail>> GetDetailsByProductIdAsync(int productId);
+
+    Task<OrderDetail?> GetExistingDetailAsync(int orderId, int productId);
 }
