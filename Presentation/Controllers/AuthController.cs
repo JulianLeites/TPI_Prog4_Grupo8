@@ -86,7 +86,7 @@ public class AuthController : ControllerBase
 
         return Ok(new
         {
-            essage = "Contraseña restablecida correctamente"
+            message = "Contraseña restablecida correctamente"
         });
     }
 }
