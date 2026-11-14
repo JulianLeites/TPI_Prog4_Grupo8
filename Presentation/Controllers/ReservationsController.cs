@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -31,7 +32,20 @@ public class ReservationsController : ControllerBase
     public async Task<ActionResult<ReservationDto>> GetById(int id)
     {
         var reservation = await _service.GetByIdAsync(id);
-        if (reservation == null) return NotFound();
+
+        if (reservation == null) 
+            return NotFound();
+
+        if (User.IsInRole("user"))
+        {
+            var loggedUserId = GetLoggedUserId();
+
+            if (loggedUserId is null)
+                return Unauthorized();
+
+            if (reservation.UserId != loggedUserId.Value)
+                return Forbid();
+        }
 
         return Ok(reservation);
     }
@@ -86,6 +100,22 @@ public class ReservationsController : ControllerBase
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto dto)
     {
+        var reservation = await _service.GetByIdAsync(id);
+
+        if (reservation is null)
+            return NotFound();
+
+        if (User.IsInRole("user"))
+        {
+            var loggedUserId = GetLoggedUserId();
+
+            if (loggedUserId is null)
+                return Unauthorized();
+
+            if (reservation.UserId != loggedUserId.Value)
+                return Forbid();
+        }
+
         try
         {
             var result = await _service.UpdateAsync(id, dto);
@@ -121,6 +151,22 @@ public class ReservationsController : ControllerBase
         int id,
         ChangeReservationStateDto dto)
     {
+        var existingReservation = await _service.GetByIdAsync(id);
+
+        if (existingReservation is null)
+            return NotFound();
+
+        if (User.IsInRole("user"))
+        {
+            var loggedUserId = GetLoggedUserId();
+
+            if (loggedUserId is null)
+                return Unauthorized();
+
+            if (existingReservation.UserId != loggedUserId.Value)
+                return Forbid();
+        }
+
         try
         {
             var reservation = await _service.ChangeStateAsync(id, dto);
@@ -140,6 +186,17 @@ public class ReservationsController : ControllerBase
     [Authorize(Roles = "waiter,user,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByUserId(int userId)
     {
+        if (User.IsInRole("user"))
+        {
+            var loggedUserId = GetLoggedUserId();
+
+            if (loggedUserId is null)
+                return Unauthorized();
+
+            if (userId != loggedUserId.Value)
+                return Forbid();
+        }
+
         var reservations = await _service.GetReservationsByUserIdAsync(userId);
         return Ok(reservations);
     }
@@ -172,5 +229,15 @@ public class ReservationsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    private int? GetLoggedUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int userId))
+            return null;
+
+        return userId;
     }
 }

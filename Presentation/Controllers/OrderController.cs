@@ -38,25 +38,6 @@ public class OrderController : ControllerBase
         return Ok(order);
     }
 
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "waiter,admin")]
-    public async Task<IActionResult> Update(int id, OrderCreateDto dto)
-    {
-        try
-        {
-            var order = await _orderService.UpdateAsync(id, dto);
-
-            if (order is null)
-                return NotFound();
-
-            return Ok(order);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
     [HttpPatch("{id:int}/state")]
     [Authorize(Roles = "waiter,admin,kitchen")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)

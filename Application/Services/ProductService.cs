@@ -34,9 +34,9 @@ public class ProductService : IProductService
         if (dto.Price <= 0)
             throw new ArgumentException("El precio debe ser mayor que cero");
 
-        var description = dto.Description.Trim();
+        var description = dto.Description?.Trim();
 
-        if (description.Length > 500)
+        if (description?.Length > 500)
             throw new ArgumentException("La descripcion no debe superar los 500 caracteres");
 
         if (string.IsNullOrWhiteSpace(dto.ImageUrl))
@@ -93,10 +93,10 @@ public class ProductService : IProductService
 
         var product = new Product
         {
-            Name = dto.Name,
+            Name = dto.Name.Trim(),
             Price = dto.Price,
-            Description = dto.Description,
-            ImageUrl = dto.ImageUrl,
+            Description = dto.Description?.Trim(),
+            ImageUrl = dto.ImageUrl.Trim(),
             ProductCategoryId = dto.ProductCategoryId,
             ProductCategory = category
         };
@@ -126,10 +126,10 @@ public class ProductService : IProductService
 
         var category = await ValidateProductAsync(dto);
 
-        product.Name = dto.Name;
+        product.Name = dto.Name.Trim();
         product.Price = dto.Price;
-        product.Description = dto.Description;
-        product.ImageUrl = dto.ImageUrl;
+        product.Description = dto.Description?.Trim();
+        product.ImageUrl = dto.ImageUrl.Trim();
         product.ProductCategoryId = dto.ProductCategoryId;
         product.ProductCategory = category;
 

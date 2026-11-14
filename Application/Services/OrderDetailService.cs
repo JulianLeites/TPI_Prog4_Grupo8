@@ -1,8 +1,8 @@
 using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Interfaces;
-using System.Linq;
 
 namespace Application.Services;
 
@@ -11,13 +11,14 @@ public class OrderDetailService : IOrderDetailService
     private readonly IOrderDetailRepository _orderDetailRepository; 
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
- 
+    private readonly ITableRepository _tableRepository;
 
-    public OrderDetailService( IOrderDetailRepository repository, IOrderRepository repository1, IProductRepository repository2)
+    public OrderDetailService( IOrderDetailRepository orderDetailRepository, IOrderRepository orderRepository, IProductRepository productRepository, ITableRepository tableRepository)
     {
-        _orderDetailRepository = repository;
-        _orderRepository = repository1;
-        _productRepository = repository2;
+        _orderDetailRepository = orderDetailRepository;
+        _orderRepository = orderRepository;
+        _productRepository = productRepository;
+        _tableRepository = tableRepository;
     } 
 
     public async Task<IEnumerable<OrderDetailDto>> GetAllAsync()
@@ -82,6 +83,7 @@ public class OrderDetailService : IOrderDetailService
             Order_id = orderDetail.Order_id 
         });
     }
+    
     public async Task<OrderDetailDto?> UpdateAsync(int id, OrderDetailUpdateDto dto)
     {
         var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
@@ -91,13 +93,20 @@ public class OrderDetailService : IOrderDetailService
 
         var product = await _productRepository.GetByIdAsync(dto.Product_id);
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
-    
+
+        if (order is null)
+            throw new InvalidOperationException($"El pedido con id {orderDetail.Order_id} no existe");
+
+        await ValidateOrderTableAsync(order);
+
         if (product is null)
             throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
+        
         if (dto.Quantity <= 0)
             throw new ArgumentException("La cantidad debe ser mayor a 0");
 
         orderDetail.Product_id = dto.Product_id;
+        orderDetail.Quantity = dto.Quantity;
         orderDetail.UnitPrice = product.Price;
         orderDetail.Subtotal = orderDetail.CalculateSubtotal();
 
@@ -128,7 +137,12 @@ public class OrderDetailService : IOrderDetailService
             throw new ArgumentException("La cantidad debe ser mayor a 0");
 
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
-        
+
+        if (order is null)
+            throw new InvalidOperationException($"El pedido con id {orderDetail.Order_id} no existe");
+
+        await ValidateOrderTableAsync(order);
+
         orderDetail.Quantity = dto.Quantity;
         orderDetail.Subtotal = orderDetail.CalculateSubtotal();
 
@@ -152,17 +166,31 @@ public class OrderDetailService : IOrderDetailService
     public async Task<bool> DeleteAsync(int id)
     {
         var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+
         if (orderDetail is null)
             return false;
             
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
 
+        if (order is null)
+            return false;
+
+        var details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+
         await _orderDetailRepository.DeleteAsync(orderDetail);
+
+        if(details.Count == 1)
+        {
+            await _orderRepository.DeleteAsync(order);
+            return true;
+        }
+
         order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
 
         order.Total = order.CalculateTotal();
 
         await _orderRepository.UpdateAsync(order);
+
         return true;
     }
 
@@ -170,20 +198,34 @@ public class OrderDetailService : IOrderDetailService
     {
 
         var product = await _productRepository.GetByIdAsync(dto.Product_id);
+        
         if(product is null){
             throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
         }
+
         var order = await _orderRepository.GetByIdAsync(dto.Order_id);
+        
         if(order is null){
             throw new ArgumentException($"La orden con id {dto.Order_id} no existe");
         }
+
+        await ValidateOrderTableAsync(order);
+        
         if (dto.Quantity <= 0)
             throw new ArgumentException("La cantidad debe ser mayor a 0");
+
         var existingDetail = await _orderDetailRepository.GetExistingDetailAsync(dto.Order_id, dto.Product_id);
+        
         if(existingDetail != null){
             existingDetail.Quantity += dto.Quantity;
             existingDetail.Subtotal = existingDetail.CalculateSubtotal();
+
             await _orderDetailRepository.UpdateAsync(existingDetail);
+
+            order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+            order.Total = order.CalculateTotal();
+
+            await _orderRepository.UpdateAsync(order);
 
             return new OrderDetailDto
             {
@@ -223,5 +265,16 @@ public class OrderDetailService : IOrderDetailService
             Product_id = orderDetail.Product_id,
             Order_id = orderDetail.Order_id
         };
+    }
+
+    private async Task ValidateOrderTableAsync(Order order)
+    {
+        var table = await _tableRepository.GetByIdAsync(order.Table_id);
+
+        if (table is null)
+            throw new InvalidOperationException($"La mesa con id {order.Table_id} no existe");
+
+        if (table.State != TableState.Occupied)
+            throw new InvalidOperationException("No se pueden modificar detalles de un pedido cuya mesa no está ocupada");
     }
 }

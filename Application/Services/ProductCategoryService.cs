@@ -43,15 +43,20 @@ public class ProductCategoryService : IProductCategoryService
 
     public async Task<ProductCategoryDto> CreateAsync(CreateProductCategoryDto dto)
     {
-        var exists = await _repository.ExistsByNameAsync(dto.Name);
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("El nombre de la categoría es obligatorio");
+
+        var name = dto.Name.Trim();
+
+        var exists = await _repository.ExistsByNameAsync(name);
         if (exists)
         {
-            throw new ArgumentException($"Ya existe una categoría con el nombre '{dto.Name}'.");
+            throw new ArgumentException($"Ya existe una categoría con el nombre '{name}'");
         }
 
         var entity = new ProductCategory
         {
-            Name = dto.Name.Trim()
+            Name = name
         };
 
         await _repository.AddAsync(entity);
@@ -66,9 +71,20 @@ public class ProductCategoryService : IProductCategoryService
     public async Task<bool> UpdateAsync(int id, UpdateProductCategoryDto dto)
     {
         var category = await _repository.GetByIdAsync(id);
-        if (category == null) return false;
+        if (category is null) 
+            return false;
 
-        category.Name = dto.Name;
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            throw new ArgumentException("El nombre de la categoría es obligatorio");
+
+        var name = dto.Name.Trim();
+
+        var exists = await _repository.ExistsByNameAsync(name);
+
+        if (exists && !string.Equals(category.Name, name, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Ya existe una categoria con ese nombre");
+
+        category.Name = name;
         await _repository.UpdateAsync(category);
 
         return true;
