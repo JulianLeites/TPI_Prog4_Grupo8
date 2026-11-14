@@ -92,22 +92,20 @@ public class ProductCategoryService : IProductCategoryService
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var category = await _repository.GetCategoryWithProductsAsync(id);
-        if (category == null) return false;
+        var category = await _repository.GetByIdAsync(id);
 
-        if (category.Products != null && category.Products.Any())
-        {
-            throw new InvalidOperationException("No se puede eliminar la categoría porque tiene productos asociados.");
-        }
+        if (category == null) 
+            return false;
 
-        await _repository.DeleteAsync(category);
-        return true;
+        return await _repository.SoftDeleteAsync(id);
     }
 
     public async Task<ProductCategoryWithProductsDto?> GetCategoryWithProductsAsync(int categoryId)
     {
         var category = await _repository.GetCategoryWithProductsAsync(categoryId);
-        if (category is null) return null;
+        
+        if (category is null)
+            return null;
 
         return new ProductCategoryWithProductsDto
         {
