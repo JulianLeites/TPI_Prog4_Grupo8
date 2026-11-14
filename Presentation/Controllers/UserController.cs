@@ -140,12 +140,19 @@ public class UserController : ControllerBase
             return Unauthorized();
         }
 
-        var deleted = await _userService.DeleteAsync(userId);
+        try
+        {
+            var deleted = await _userService.DeleteAsync(userId);
 
-        if (!deleted)
-            return NotFound();
+            if (!deleted)
+                return NotFound();
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -206,6 +213,10 @@ public class UserController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 }

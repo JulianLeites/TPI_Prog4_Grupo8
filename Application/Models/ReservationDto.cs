@@ -29,13 +29,6 @@ public class CreateReservationDto
     public List<int> TableIds { get; set; } = new();
 }
 
-public class UpdateReservationDto
-{
-    public DateOnly Date { get; set; }
-    public TimeOnly Time { get; set; }
-    public int Diners { get; set; }
-}
-
 public class ChangeReservationStateDto
 {
     public ReservationState State { get; set; }
