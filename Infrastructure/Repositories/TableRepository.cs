@@ -41,7 +41,7 @@ public class TableRepository
         return await _context.Reservations
             .AnyAsync(r =>
             r.Tables.Any(t => t.Id == tableId) &&
-            r.State == ReservationState.Confirmed &&
+            r.State != ReservationState.Cancelled &&
             (
                 r.Date > date ||
                 (r.Date == date && r.Time > time)

@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -79,6 +80,7 @@ public class ReservationsController : ControllerBase
                 return Unauthorized();
 
             dto.UserId = loggedUserId;
+            dto.TableIds = new List<int>();
         }
         try
         {
@@ -147,9 +149,7 @@ public class ReservationsController : ControllerBase
 
     [HttpPatch("{id:int}")]
     [Authorize(Roles = "waiter,admin,user")]
-    public async Task<IActionResult> ChangeState(
-        int id,
-        ChangeReservationStateDto dto)
+    public async Task<IActionResult> ChangeState(int id, ChangeReservationStateDto dto)
     {
         var existingReservation = await _service.GetByIdAsync(id);
 
@@ -165,6 +165,9 @@ public class ReservationsController : ControllerBase
 
             if (existingReservation.UserId != loggedUserId.Value)
                 return Forbid();
+
+            if (dto.State != ReservationState.Cancelled)
+                return Forbid();
         }
 
         try
@@ -179,6 +182,10 @@ public class ReservationsController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 
