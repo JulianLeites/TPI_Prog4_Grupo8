@@ -118,8 +118,7 @@ public class TableService : ITableService
         if (hasFutureReservations)
             throw new InvalidOperationException("No se puede eliminar una mesa que tiene reservas futuras confirmadas");
 
-        await _tableRepository.DeleteAsync(table);
-        return true;
+        return await _tableRepository.SoftDeleteAsync(id);
     }
 
     public async Task<TableDto> CreateAsync(TableCreateDto dto)

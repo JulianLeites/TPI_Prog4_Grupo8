@@ -17,6 +17,7 @@ public class UserRepository
     public override async Task<IEnumerable<User>> GetAllAsync()
     {
         return await _dbSet
+            .Where(user => !user.IsDeleted)
             .Include(user => user.Role)
             .ToListAsync();
     }
@@ -24,6 +25,7 @@ public class UserRepository
     public override async Task<User?> GetByIdAsync(int id)
     {
         return await _dbSet
+            .Where(user => !user.IsDeleted)
             .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Id == id);
     }
@@ -31,6 +33,7 @@ public class UserRepository
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _dbSet
+            .Where(user => !user.IsDeleted)
             .Include(user => user.Role)
             .FirstOrDefaultAsync(user => user.Email == email);
     }
@@ -38,18 +41,28 @@ public class UserRepository
     public async Task<IEnumerable<User>> GetByRoleIdAsync(int roleId)
     {
         return await _dbSet
+            .Where(user => !user.IsDeleted && user.RoleId == roleId)
             .Include(user => user.Role)
-            .Where(user => user.RoleId == roleId)
             .ToListAsync();
     }
 
-    public async Task<bool> HasReservationsAsync(int userId)
+    public async Task<bool> SoftDeleteAsync(int userId)
     {
-        var today = DateOnly.FromDateTime(DateTime.Now);
-        var currentTime = TimeOnly.FromDateTime(DateTime.Now);
+        var user = await _dbSet
+            .FirstOrDefaultAsync(user => user.Id == userId && !user.IsDeleted);
 
-        return await _context.Reservations.AnyAsync(r => r.UserId == userId &&
-        (r.Date > today ||
-        (r.Date == today && r.Time >= currentTime)));
+        if (user == null)
+            return false;
+
+        user.IsDeleted = true;
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        return await _dbSet
+            .AnyAsync(user => user.Email == email);
     }
 }

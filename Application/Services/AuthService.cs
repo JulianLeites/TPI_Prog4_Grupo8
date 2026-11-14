@@ -39,9 +39,10 @@ public class AuthService : IAuthService
     public async Task<bool> RegisterAsync(RegisterDto registerDto)
     {
         var email = registerDto.Email.Trim().ToLowerInvariant();
-        var existingUser = await _userRepository.GetByEmailAsync(email);
 
-        if (existingUser is not null)
+        var emailExists = await _userRepository.EmailExistsAsync(email);
+
+        if (emailExists)
             return false;
 
         var roles = await _roleRepository.GetAllAsync();

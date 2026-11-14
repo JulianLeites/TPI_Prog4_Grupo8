@@ -15,5 +15,6 @@ namespace Domain.Entities
         public int RoleId { get; set; }
         public Role Role { get; set; } = null!;
         public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+        public bool IsDeleted { get; set; } = false;
     }
 }

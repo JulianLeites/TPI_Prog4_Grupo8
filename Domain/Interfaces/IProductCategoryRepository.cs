@@ -9,4 +9,5 @@ public interface IProductCategoryRepository : IGenericRepository<ProductCategory
 {
     Task<ProductCategory?> GetCategoryWithProductsAsync(int categoryId);
     Task<bool> ExistsByNameAsync(string name);
+    Task<bool> SoftDeleteAsync(int categoryId);
 }

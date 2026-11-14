@@ -227,12 +227,10 @@ public class ProductService : IProductService
     public async Task<bool> DeleteAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
-        if(product is null)
-        {
-            return false;
-        };
-        await _productRepository.DeleteAsync(product);
 
-        return true;
+        if(product is null)
+            return false;
+
+        return await _productRepository.SoftDeleteAsync(id);
     }
 }

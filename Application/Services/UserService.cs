@@ -100,22 +100,16 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
-        var hasReservations = await _userRepository.HasReservationsAsync(id);
-
-        if (hasReservations)
-            throw new InvalidOperationException("No se puede eliminar un usuario con reservas futuras");
-
-        await _userRepository.DeleteAsync(user);
-        return true;
+        return await _userRepository.SoftDeleteAsync(id);
     }
 
     public async Task<UserResponseDto> CreateAsync(UserCreateDto dto)
     {
         var email = dto.Email.Trim().ToLowerInvariant();
 
-        var existingUser = await _userRepository.GetByEmailAsync(email);
+        var emailExists = await _userRepository.EmailExistsAsync(email);
 
-        if (existingUser is not null)
+        if (emailExists)
             throw new ArgumentException("El email ya esta registrado");
 
         var role = await _roleRepository.GetByIdAsync(dto.RoleId);

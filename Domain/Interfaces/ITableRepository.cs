@@ -12,4 +12,5 @@ public interface ITableRepository : IGenericRepository<Table>
     Task<bool> ExistsByNumberAsync(int number, int? excludeId = null);
     Task<Table?> GetByNumberAsync(int number);
     Task<bool> HasFutureConfirmedReservationsAsync(int tableId, DateOnly date, TimeOnly time);
+    Task<bool> SoftDeleteAsync(int tableId);
 }

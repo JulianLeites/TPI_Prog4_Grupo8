@@ -37,7 +37,8 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Table>()
             .HasIndex(t => t.Number)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
         modelBuilder.Entity<Table>()
             .ToTable(t => t.HasCheckConstraint(
