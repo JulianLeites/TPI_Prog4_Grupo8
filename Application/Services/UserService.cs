@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Interfaces;
 using System;
@@ -100,6 +101,9 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
+        if (user.RoleId == RoleIds.Admin)
+            await EnsureAnotherAdminExistsAsync();
+
         return await _userRepository.SoftDeleteAsync(id);
     }
 
@@ -175,6 +179,9 @@ public class UserService : IUserService
         if (role is null)
             throw new ArgumentException("El rol seleccionado no existe");
 
+        if (user.RoleId == RoleIds.Admin && role.Id != RoleIds.Admin)
+            await EnsureAnotherAdminExistsAsync();
+
         user.RoleId = role.Id;
         user.Role = role;
 
@@ -206,5 +213,13 @@ public class UserService : IUserService
             RoleId = user.RoleId,
             RoleName = user.Role.Name
         });
+    }
+
+    private async Task EnsureAnotherAdminExistsAsync()
+    {
+        var admins = await _userRepository.GetByRoleIdAsync(RoleIds.Admin);
+
+        if (admins.Count() <= 1)
+            throw new InvalidOperationException("Debe quedar al menos un administrador en el sistema.");
     }
 }

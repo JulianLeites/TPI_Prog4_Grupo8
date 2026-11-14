@@ -131,7 +131,9 @@ public class UserController : ControllerBase
             return Unauthorized();
         }
 
-        var deleted = await _userService.DeleteAsync(userId);
+        try
+        {
+            var deleted = await _userService.DeleteAsync(userId);
 
         if (!deleted)
             return Problem(
@@ -140,7 +142,12 @@ public class UserController : ControllerBase
                 detail: "No se encontró el usuario solicitado."
             );
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     [HttpPost]

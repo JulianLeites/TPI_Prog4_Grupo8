@@ -151,38 +151,6 @@ public class ReservationService : IReservationService
         };
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateReservationDto dto)
-    {
-        var reservation = await _repository.GetByIdAsync(id);
-        if (reservation is null) return false;
-
-        if (reservation.State != ReservationState.Pending)
-            throw new InvalidOperationException("Solo se pueden modificar reservas que estén en estado pendiente.");
-
-        if (dto.Diners < 1)
-            throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
-        
-        if (dto.Date.ToDateTime(dto.Time) <= DateTime.Now)
-            throw new ArgumentException("La fecha y hora de la reserva deben ser posteriores al momento actual.");
-
-        int currentCapacity = reservation.Tables.Sum(t => t.Capacity);
-        if (currentCapacity < dto.Diners)
-            throw new ArgumentException($"Las mesas asignadas tienen capacidad para {currentCapacity} personas, insuficiente para {dto.Diners} comensales.");
-
-        var occupiedIds = await _repository.GetOccupiedTableIdsAsync(dto.Date, dto.Time, excludeReservationId: id);
-        var conflictingTable = reservation.Tables.FirstOrDefault(t => occupiedIds.Contains(t.Id));
-
-        if (conflictingTable is not null)
-            throw new InvalidOperationException($"No se puede asignar ese horario porque no estan disponibles las mesas.");
-        
-        reservation.Date = dto.Date;
-        reservation.Time = dto.Time;
-        reservation.Diners = dto.Diners;
-
-        await _repository.UpdateAsync(reservation);
-        return true;
-    }
-
     public async Task<ReservationDto?> ChangeStateAsync(int id, ChangeReservationStateDto dto)
     {
         if (!Enum.IsDefined(typeof(ReservationState), dto.State))

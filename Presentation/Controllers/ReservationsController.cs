@@ -28,25 +28,26 @@ public class ReservationsController : ControllerBase
         return Ok(reservations);
     }
 
+    [HttpGet("mine")]
+    [Authorize(Roles = "user")]
+    public async Task<ActionResult<IEnumerable<ReservationDto>>> GetMine()
+    {
+        var loggedUserId = GetLoggedUserId();
+        if (loggedUserId is null)
+            return Unauthorized();
+
+        var reservations = await _service.GetReservationsByUserIdAsync(loggedUserId.Value);
+        return Ok(reservations);
+    }
+
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "waiter,admin,user")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<ActionResult<ReservationDto>> GetById(int id)
     {
         var reservation = await _service.GetByIdAsync(id);
 
         if (reservation == null) 
             return NotFound();
-
-        if (User.IsInRole("user"))
-        {
-            var loggedUserId = GetLoggedUserId();
-
-            if (loggedUserId is null)
-                return Unauthorized();
-
-            if (reservation.UserId != loggedUserId.Value)
-                return Forbid();
-        }
 
         return Ok(reservation);
     }
@@ -71,20 +72,25 @@ public class ReservationsController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "waiter,admin,user")]
-    public async Task<ActionResult<ReservationDto>> Create([FromBody] CreateReservationDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateReservationDto dto)
     {
         if (User.IsInRole("user"))
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int loggedUserId))
+            var loggedUserId = GetLoggedUserId();
+            if (loggedUserId is null)
                 return Unauthorized();
 
-            dto.UserId = loggedUserId;
+            dto.UserId = loggedUserId.Value;
             dto.TableIds = new List<int>();
         }
+
         try
         {
             var created = await _service.CreateAsync(dto);
+
+            if (User.IsInRole("user"))
+                return Ok(created);
+
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
         catch (ArgumentException ex)
@@ -96,46 +102,6 @@ public class ReservationsController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
-
-
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "waiter,admin,user")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateReservationDto dto)
-    {
-        var reservation = await _service.GetByIdAsync(id);
-
-        if (reservation is null)
-            return NotFound();
-
-        if (User.IsInRole("user"))
-        {
-            var loggedUserId = GetLoggedUserId();
-
-            if (loggedUserId is null)
-                return Unauthorized();
-
-            if (reservation.UserId != loggedUserId.Value)
-                return Forbid();
-        }
-
-        try
-        {
-            var result = await _service.UpdateAsync(id, dto);
-            if (!result) return NotFound();
-
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
-    }
-    
-
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "admin")]
@@ -164,7 +130,7 @@ public class ReservationsController : ControllerBase
                 return Unauthorized();
 
             if (existingReservation.UserId != loggedUserId.Value)
-                return Forbid();
+                return NotFound();
 
             if (dto.State != ReservationState.Cancelled)
                 return Forbid();
@@ -190,20 +156,9 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("user/{userId:int}")]
-    [Authorize(Roles = "waiter,user,admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<ActionResult<IEnumerable<ReservationDto>>> GetByUserId(int userId)
     {
-        if (User.IsInRole("user"))
-        {
-            var loggedUserId = GetLoggedUserId();
-
-            if (loggedUserId is null)
-                return Unauthorized();
-
-            if (userId != loggedUserId.Value)
-                return Forbid();
-        }
-
         var reservations = await _service.GetReservationsByUserIdAsync(userId);
         return Ok(reservations);
     }
