@@ -29,7 +29,7 @@ public class ProductDto
     public decimal Price { get; set; }
 
     [MaxLength(500, ErrorMessage = "La descripcion no puede superar los 500 caracteres")]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     [Required(ErrorMessage = "La URL de la imagen es obligatoria")]
     [Url(ErrorMessage = "La URL no tiene un formato valido")]

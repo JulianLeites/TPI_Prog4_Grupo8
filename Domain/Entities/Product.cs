@@ -13,5 +13,6 @@ namespace Domain.Entities
         public string ImageUrl { get; set; } = string.Empty;
         public int ProductCategoryId { get; set; }
         public ProductCategory ProductCategory { get; set; } = null!;
+        public bool IsDeleted { get; set; } = false;
     }
 }
