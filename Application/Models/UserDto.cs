@@ -60,7 +60,7 @@ public class UserUpdateDto
     [RegularExpression(@".*\S.*", ErrorMessage = "El nombre no puede contener solamente espacios.")]
     public string Name { get; set; } = string.Empty;
     [Required(ErrorMessage = "El apellido es obligatorio.")]
-    [StringLength(50, ErrorMessage = "El apellido no puede superar los 550 caracteres.")]
+    [StringLength(50, ErrorMessage = "El apellido no puede superar los 50 caracteres.")]
     [RegularExpression(@".*\S.*", ErrorMessage = "El apellido no puede contener solamente espacios.")]
     public string Surname { get; set; } = string.Empty;
     [Required(ErrorMessage = "El email es obligatorio.")]
