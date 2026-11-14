@@ -152,17 +152,31 @@ public class OrderDetailService : IOrderDetailService
     public async Task<bool> DeleteAsync(int id)
     {
         var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+
         if (orderDetail is null)
             return false;
             
         var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
 
+        if (order is null)
+            return false;
+
+        var details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+
         await _orderDetailRepository.DeleteAsync(orderDetail);
+
+        if(details.Count == 1)
+        {
+            await _orderRepository.DeleteAsync(order);
+            return true;
+        }
+
         order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
 
         order.Total = order.CalculateTotal();
 
         await _orderRepository.UpdateAsync(order);
+
         return true;
     }
 

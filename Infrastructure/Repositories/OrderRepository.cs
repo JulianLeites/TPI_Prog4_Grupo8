@@ -24,7 +24,6 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .ThenInclude(d => d.product)
         .ToListAsync();
     }
-    
     public async Task<IEnumerable<Order>> GetOrdersByTableIdAsync(int tableId)
     {
         return await _context.Orders
@@ -38,5 +37,24 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             .Include (o => o.Details)
             .Where(od => od.State == 0)
             .ToListAsync();
+    }
+    public async Task DeleteWithDetailsAsync(Order order)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            _context.OrderDetails.RemoveRange(order.Details);
+            _context.Orders.Remove(order);
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

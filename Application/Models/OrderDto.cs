@@ -17,6 +17,8 @@ public class OrderDto
 public class OrderCreateDto
 {
     public int Table_id { get; set; }
+    public int Product_id { get; set; }
+    public int Quantity { get; set; }
 }
 
 public class ChangeOrderStateDto
