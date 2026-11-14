@@ -31,7 +31,11 @@ public class RoleController : ControllerBase
         var role = await _roleService.GetByIdAsync(id);
 
         if (role is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
 
         return Ok(role);
     }
@@ -39,62 +43,42 @@ public class RoleController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, RoleUpdateDto dto)
     {
-        try
-        {
-            var role = await _roleService.UpdateAsync(id, dto);
+        var role = await _roleService.UpdateAsync(id, dto);
 
-            if (role is null)
-                return NotFound();
-            return Ok(role);
-        }
-        catch(ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        if (role is null)
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
+
+        return Ok(role);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var deleted = await _roleService.DeleteAsync(id);
+        var deleted = await _roleService.DeleteAsync(id);
 
-            if (!deleted)
-                return NotFound();
+        if (!deleted)
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
 
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        return NoContent();
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(RoleCreateDto dto)
     {
-        try
-        {
-            var role = await _roleService.CreateAsync(dto);
+        var role = await _roleService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = role.Id },
-                role
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message});
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = role.Id },
+            role
+        );
     }
 }

@@ -1,14 +1,13 @@
 using Application.Interfaces;
 using Application.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "waiter,admin")]
+[Authorize]
 public class OrderDetailController : ControllerBase
 {
     private readonly IOrderDetailService _orderDetailService;
@@ -31,10 +30,21 @@ public class OrderDetailController : ControllerBase
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var orderDetail = await _orderDetailService.GetByIdAsync(id);
 
         if (orderDetail is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Detalle no encontrado",
+                detail: "No se encontró el detalle de pedido solicitado."
+            );
 
         return Ok(orderDetail);
     }
@@ -43,6 +53,13 @@ public class OrderDetailController : ControllerBase
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> GetDetailsByOrderId(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
+
         var orderDetails = await _orderDetailService.GetDetailsByOrderIdAsync(id);
 
         return Ok(orderDetails);
@@ -51,6 +68,13 @@ public class OrderDetailController : ControllerBase
     [HttpGet("Product/{id:int}")]
     public async Task<IActionResult> GetDetailsByProductId(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del producto debe ser mayor que cero."
+            );
+
         var orderDetails = await _orderDetailService.GetDetailsByProductIdAsync(id);
 
         return Ok(orderDetails);
@@ -60,48 +84,67 @@ public class OrderDetailController : ControllerBase
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Update(int id, OrderDetailUpdateDto dto)
     {
-        try
-        {
-            var orderDetail = await _orderDetailService.UpdateAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
 
-            if (orderDetail is null)
-                return NotFound();
+        var orderDetail = await _orderDetailService.UpdateAsync(id, dto);
 
-            return Ok(orderDetail);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (orderDetail is null)
+            return Problem(
+                statusCode: 404,
+                title: "Detalle no encontrado",
+                detail: "No se encontró el detalle de pedido solicitado."
+            );
+
+        return Ok(orderDetail);
     }
 
     [HttpPatch("{id:int}/Quantity")]
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> ChangeQuantity(int id, OrderDetailQuantityDto dto)
     {
-        try
-        {
-            var orderDetail = await _orderDetailService.ChangeQuantityAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
 
-            if (orderDetail is null)
-                return NotFound();
+        var orderDetail = await _orderDetailService.ChangeQuantityAsync(id, dto);
 
-            return Ok(orderDetail);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (orderDetail is null)
+            return Problem(
+                statusCode: 404,
+                title: "Detalle no encontrado",
+                detail: "No se encontró el detalle de pedido solicitado."
+            );
+
+        return Ok(orderDetail);
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var deleted = await _orderDetailService.DeleteAsync(id);
 
         if (!deleted)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Detalle no encontrado",
+                detail: "No se encontró el detalle de pedido solicitado."
+            );
 
         return NoContent();
     }
@@ -110,19 +153,12 @@ public class OrderDetailController : ControllerBase
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Create(CreateOrderDetailDto dto)
     {
-        try
-        {
-            var orderDetail = await _orderDetailService.CreateAsync(dto);
+        var orderDetail = await _orderDetailService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = orderDetail.Id },
-                orderDetail
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = orderDetail.Id },
+            orderDetail
+        );
     }
 }

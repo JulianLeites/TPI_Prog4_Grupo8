@@ -1,7 +1,6 @@
 using Application.Interfaces;
 using Application.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
@@ -30,10 +29,21 @@ public class OrderController : ControllerBase
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
+
         var order = await _orderService.GetByIdAsync(id);
 
         if (order is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Pedido no encontrado",
+                detail: "No se encontró el pedido solicitado."
+            );
 
         return Ok(order);
     }
@@ -42,29 +52,44 @@ public class OrderController : ControllerBase
     [Authorize(Roles = "waiter,admin,kitchen")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)
     {
-        try
-        {
-            var order = await _orderService.ChangeStateAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
 
-            if (order is null)
-                return NotFound();
+        var order = await _orderService.ChangeStateAsync(id, dto);
 
-            return Ok(order);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (order is null)
+            return Problem(
+                statusCode: 404,
+                title: "Pedido no encontrado",
+                detail: "No se encontró el pedido solicitado."
+            );
+
+        return Ok(order);
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
+
         var deleted = await _orderService.DeleteAsync(id);
 
         if (!deleted)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Pedido no encontrado",
+                detail: "No se encontró el pedido solicitado."
+            );
 
         return NoContent();
     }
@@ -73,28 +98,28 @@ public class OrderController : ControllerBase
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Create(OrderCreateDto dto)
     {
-        try
-        {
-            var order = await _orderService.CreateAsync(dto);
+        var order = await _orderService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = order.Id },
-                order
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = order.Id },
+            order
+        );
     }
 
     [HttpGet("Table/{id:int}")]
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetOrdersByTableId(int id)
     {
-        var orderDetails = await _orderService.GetOrdersByTableIdAsync(id);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID de la mesa debe ser mayor que cero."
+            );
 
+        var orderDetails = await _orderService.GetOrdersByTableIdAsync(id);
+        
         return Ok(orderDetails);
     }
     [HttpGet("State/InPreparation")]

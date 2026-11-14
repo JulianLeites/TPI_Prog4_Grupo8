@@ -3,6 +3,7 @@ using Application.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace Presentation.Controllers;
 
@@ -19,13 +20,10 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "admin")]
-    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( [FromQuery] int? roleId)
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAll( [FromQuery, Range(1, int.MaxValue)] int? roleId)
     {
         if (roleId.HasValue)
         {
-            if (roleId.Value <= 0)
-                return BadRequest("Id de rol Invalido");
-
             var usersByRole = await _userService.GetByRoleIdAsync(roleId.Value);
             return Ok(usersByRole);
         }
@@ -41,7 +39,11 @@ public class UserController : ControllerBase
         var user = await _userService.GetByIdAsync(id);
 
         if (user is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
         return Ok(user);
     }
@@ -51,16 +53,17 @@ public class UserController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-        if (userIdClaim is null)
-            return Unauthorized();
-
-        if (!int.TryParse(userIdClaim.Value, out int userId))
+        if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int userId))
             return Unauthorized();
 
         var user = await _userService.GetByIdAsync(userId);
 
         if (user is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
         return Ok(user);
     }
@@ -69,19 +72,16 @@ public class UserController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(int id, UserUpdateDto dto)
     {
-        try
-        {
-            var user = await _userService.UpdateAsync(id, dto);
+        var user = await _userService.UpdateAsync(id, dto);
 
-            if (user is null)
-                return NotFound();
+        if (user is null)
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
-            return Ok(user);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message =  ex.Message });
-        }
+        return Ok(user);
     }
 
     [HttpPut("me")]
@@ -89,44 +89,35 @@ public class UserController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
-        if (userIdClaim is null ||
-            !int.TryParse(userIdClaim.Value, out int userId))
-        {
+        if (userIdClaim is null || !int.TryParse(userIdClaim.Value, out int userId))
             return Unauthorized();
-        }
 
-        try
-        {
-            var user = await _userService.UpdateAsync(userId, dto);
+        var user = await _userService.UpdateAsync(userId, dto);
 
-            if (user is null)
-                return NotFound();
+        if (user is null)
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
-            return Ok(user);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return Ok(user);
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        try
-        {
-            var deleted = await _userService.DeleteAsync(id);
+        var deleted = await _userService.DeleteAsync(id);
 
-            if (!deleted)
-                return NotFound();
+        if (!deleted)
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(ex.Message);
-        }
+        return NoContent();
     }
 
     [HttpDelete("me")]
@@ -143,7 +134,11 @@ public class UserController : ControllerBase
         var deleted = await _userService.DeleteAsync(userId);
 
         if (!deleted)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
         return NoContent();
     }
@@ -152,20 +147,13 @@ public class UserController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> Create(UserCreateDto dto)
     {
-        try
-        {
-            var user = await _userService.CreateAsync(dto);
+        var user = await _userService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = user.Id},
-                user
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = user.Id},
+            user
+        );
     }
 
     [HttpPatch("me/password")]
@@ -182,10 +170,11 @@ public class UserController : ControllerBase
         var changed = await _userService.ChangePasswordAsync(userId, dto);
 
         if (!changed)
-            return BadRequest(new
-            {
-                message = "No se pudo cambiar la contraseña. Verificá el usuario y la contraseña actual"
-            });
+            return Problem(
+                statusCode: 400,
+                title: "No se pudo cambiar la contraseña",
+                detail: "Verifica la contraseña actual y volve a intentarlo"
+            );
 
         return NoContent();
     }
@@ -194,18 +183,15 @@ public class UserController : ControllerBase
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> ChangeRole(int id, ChangeRoleDto dto)
     {
-        try
-        {
-            var user = await _userService.ChangeRoleAsync(id, dto);
+        var user = await _userService.ChangeRoleAsync(id, dto);
 
-            if (user is null)
-                return NotFound();
+        if (user is null)
+            return Problem(
+                statusCode: 404,
+                title: "Recurso no encontrado",
+                detail: "No se encontró el usuario solicitado."
+            );
 
-            return Ok(user);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return Ok(user);
     }
 }
