@@ -1,7 +1,5 @@
 ﻿using Application.Interfaces;
 using Application.Models;
-using Azure.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
@@ -25,10 +23,11 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(registerDto);
 
         if (!result)
-            return Conflict(new
-            {
-                message = "Ya existe un usuario con ese email"
-            });
+            return Problem(
+                statusCode: 409,
+                title: "Conflicto de registro",
+                detail: "Ya existe un usuario con ese email."
+            );
 
         return Ok(new
         {
@@ -42,10 +41,11 @@ public class AuthController : ControllerBase
         var token = await _authService.LoginAsync(loginDto);
 
         if (token is null)
-            return Unauthorized(new
-            {
-                message = "Email o Contraseña incorrectos"
-            });
+            return Problem(
+                statusCode: 401,
+                title: "Autenticación fallida",
+                detail: "Email o contraseña incorrectos."
+            );
 
         return Ok(new
         {
@@ -77,12 +77,11 @@ public class AuthController : ControllerBase
         var result = await _authService.ResetPasswordAsync(dto);
 
         if (!result)
-        {
-            return BadRequest(new
-            {
-                message = "No se pudo restablecer la contraseña"
-            });
-        }
+            return Problem(
+                statusCode: 400,
+                title: "Restablecimiento fallido",
+                detail: "No se pudo restablecer la contraseña. Verificá el código y los datos ingresados."
+            );
 
         return Ok(new
         {
