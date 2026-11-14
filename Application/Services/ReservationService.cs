@@ -59,8 +59,8 @@ public class ReservationService : IReservationService
     {
         if (dto.Diners < 1)
             throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
+       
         var reservationDateTime = dto.Date.ToDateTime(dto.Time);
-
         if (reservationDateTime <= DateTime.Now)
             throw new ArgumentException("La fecha y hora de la reserva deben ser posteriores al actual.");
 
@@ -132,7 +132,7 @@ public class ReservationService : IReservationService
             Time = dto.Time,
             Diners = dto.Diners,
             UserId= dto.UserId,
-            State = ReservationState.Confirmed,
+            State = ReservationState.Pending,
             Tables = assignedTables
 
         };
@@ -156,6 +156,9 @@ public class ReservationService : IReservationService
         var reservation = await _repository.GetByIdAsync(id);
         if (reservation is null) return false;
 
+        if (reservation.State != ReservationState.Pending)
+            throw new InvalidOperationException("Solo se pueden modificar reservas que estén en estado pendiente.");
+
         if (dto.Diners < 1)
             throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
         
@@ -170,7 +173,7 @@ public class ReservationService : IReservationService
         var conflictingTable = reservation.Tables.FirstOrDefault(t => occupiedIds.Contains(t.Id));
 
         if (conflictingTable is not null)
-            throw new InvalidOperationException($"No se puede asignar ese horario porque no estan disponibles las mesas .");
+            throw new InvalidOperationException($"No se puede asignar ese horario porque no estan disponibles las mesas.");
         
         reservation.Date = dto.Date;
         reservation.Time = dto.Time;
@@ -182,13 +185,26 @@ public class ReservationService : IReservationService
 
     public async Task<ReservationDto?> ChangeStateAsync(int id, ChangeReservationStateDto dto)
     {
-        var reservation = await _repository.GetByIdAsync(id);
+        if (!Enum.IsDefined(typeof(ReservationState), dto.State))
+            throw new ArgumentException("El estado de reserva no es válido.");
 
-        if (reservation == null)
+        var reservation = await _repository.GetByIdAsync(id);
+        if (reservation is null)
             return null;
 
-        reservation.State = dto.State;
+        if (reservation.State == dto.State)
+            throw new ArgumentException($"La reserva ya se encuentra en estado {reservation.State}.");
 
+        bool isValidTransition = reservation.State switch
+        {
+            ReservationState.Pending => dto.State is ReservationState.Confirmed or ReservationState.Cancelled,
+            _ => false
+        };
+
+        if (!isValidTransition)
+            throw new InvalidOperationException($"No se puede cambiar una reserva de estado '{reservation.State}' a '{dto.State}'.");
+
+        reservation.State = dto.State;
         await _repository.UpdateAsync(reservation);
 
         return new ReservationDto

@@ -6,7 +6,8 @@ namespace Domain.Enums;
 
 public enum ReservationState
 {
-    Confirmed = 0,
-    Cancelled = 1,
+    Pending = 0,
+    Confirmed = 1,
+    Cancelled = 2,
 
 }

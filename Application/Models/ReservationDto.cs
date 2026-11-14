@@ -1,6 +1,7 @@
 ﻿using Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace Application.Models;
@@ -20,10 +21,12 @@ public class CreateReservationDto
 {
     public DateOnly Date { get; set; }
     public TimeOnly Time { get; set; }
+
+    [Range(1, 50, ErrorMessage = "La cantidad de comensales debe estar entre 1 y 50.")]
     public int Diners { get; set; }
+
     public int UserId { get; set; }
     public List<int> TableIds { get; set; } = new();
-    public ReservationState State { get; set; }
 }
 
 public class UpdateReservationDto

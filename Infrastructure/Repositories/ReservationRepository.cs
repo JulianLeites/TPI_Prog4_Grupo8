@@ -58,24 +58,27 @@ public class ReservationRepository : GenericRepository<Reservation>, IReservatio
 
     public async Task<List<int>> GetOccupiedTableIdsAsync(DateOnly date, TimeOnly time, int marginMinutes = 60, int? excludeReservationId = null)
     {
-        var startTime = time.AddMinutes(-marginMinutes);
-        var endTime = time.AddMinutes(marginMinutes);
-
         var query = _dbSet
-            .Where(r => r.Date == date &&
-                        r.State == ReservationState.Confirmed &&
-                        r.Time > startTime &&
-                        r.Time < endTime);
+            .Include(r => r.Tables)
+            .Where(r => r.Date == date && r.State != ReservationState.Cancelled);
 
         if (excludeReservationId.HasValue)
-        {
             query = query.Where(r => r.Id != excludeReservationId.Value);
-        }
 
-        return await query
+        var reservations = await query.ToListAsync();
+
+        double target = time.ToTimeSpan().TotalMinutes;
+
+        return reservations
+            .Where(r =>
+            {
+                double diff = Math.Abs(r.Time.ToTimeSpan().TotalMinutes - target);
+                diff = Math.Min(diff, 1440 - diff); // distancia circular dentro del día
+                return diff < marginMinutes;
+            })
             .SelectMany(r => r.Tables.Select(t => t.Id))
             .Distinct()
-            .ToListAsync();
+            .ToList();
     }
 
 }
