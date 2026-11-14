@@ -83,6 +83,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+builder.Services.AddHttpClient<IDolarService, DolarService>();
 
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();

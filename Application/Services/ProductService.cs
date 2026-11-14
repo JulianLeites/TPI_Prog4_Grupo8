@@ -9,13 +9,15 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IGenericRepository<ProductCategory> _productCategoryRepository;
-
+    private readonly IDolarService _dolarService;
     public ProductService(
         IProductRepository repository,
-        IGenericRepository<ProductCategory> productCategoryRepository)
+        IGenericRepository<ProductCategory> productCategoryRepository,
+        IDolarService dolarService)
     {
         _productRepository = repository;
         _productCategoryRepository = productCategoryRepository;
+        _dolarService = dolarService;
     }
 
     private async Task<ProductCategory> ValidateProductAsync(ProductDto dto)
@@ -56,11 +58,13 @@ public class ProductService : IProductService
     public async Task<IEnumerable<ProductResponseDto>> GetAllAsync()
     {
         var products = await _productRepository.GetAllAsync();
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
         return products.Select(product => new ProductResponseDto
         {
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -71,7 +75,8 @@ public class ProductService : IProductService
     public async Task<ProductResponseDto?> GetByIdAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
-        if(product is null)
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
+        if (product is null)
         {
             return null;
         }
@@ -80,6 +85,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -90,6 +96,8 @@ public class ProductService : IProductService
     public async Task<ProductResponseDto> CreateAsync(ProductDto dto)
     {
         var category = await ValidateProductAsync(dto);
+
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
 
         var product = new Product
         {
@@ -108,6 +116,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -116,7 +125,7 @@ public class ProductService : IProductService
     }
 
     public async Task<ProductResponseDto?> UpdateAsync(int Id, ProductDto dto)
-    {
+    {   
         var product = await _productRepository.GetByIdAsync(Id);
 
         if(product is null)
@@ -125,6 +134,7 @@ public class ProductService : IProductService
         }
 
         var category = await ValidateProductAsync(dto);
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
 
         product.Name = dto.Name.Trim();
         product.Price = dto.Price;
@@ -140,6 +150,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -156,6 +167,7 @@ public class ProductService : IProductService
             throw new ArgumentException("El precio debe ser mayor a 0");
 
         var product = await _productRepository.GetByIdAsync(id);
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
 
         if (product is null)
             return null;
@@ -169,6 +181,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -179,12 +192,13 @@ public class ProductService : IProductService
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByCategoryIdAsync(int categoryId)
     {
         var products = await _productRepository.GetProductsByCategoryIdAsync(categoryId);
-
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
         return products.Select(product => new ProductResponseDto
         {
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -195,12 +209,14 @@ public class ProductService : IProductService
     public async Task<IEnumerable<ProductResponseDto>> GetProductsByNameAsync(string term)
     {
         var products = await _productRepository.GetProductsByNameAsync(term);
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
 
         return products.Select(product => new ProductResponseDto
         {
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
+            PriceUsd = product.Price / dolarOficial,
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
