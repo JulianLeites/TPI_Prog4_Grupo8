@@ -18,18 +18,18 @@ public class DolarService : IDolarService
         _httpClient = httpClient;
     }
 
-    public async Task<decimal> GetDolarOficialVentaAsync()
+    public async Task<decimal?> GetDolarOficialVentaAsync()
     {
         try
         {
-            // 💡 Llamada directa a la API del Dólar Oficial
-            var result = await _httpClient.GetFromJsonAsync<DolarResponseDto>("https://dolarapi.com/v1/dolares/oficial");
-            return result?.Venta ?? 0;
+            var result = await _httpClient.GetFromJsonAsync<DolarResponseDto>(
+                "https://dolarapi.com/v1/dolares/oficial");
+
+            return result?.Venta > 0 ? result.Venta : null;
         }
         catch
         {
-            // Si la API no responde o no hay internet, devolvemos 0 para no romper la app
-            return 0;
+            return null;
         }
     }
 }

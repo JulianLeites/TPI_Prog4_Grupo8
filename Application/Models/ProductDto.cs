@@ -7,7 +7,7 @@ public class ProductResponseDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
-    public decimal PriceUsd { get; set; }
+    public decimal? PriceUsd { get; set; }
     public string? Description { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
     public int? ProductCategoryId { get; set; }
@@ -25,7 +25,8 @@ public class ProductDto
     public string Name { get; set; } = string.Empty;
 
     [Range(typeof(decimal), "0.01", "999999999",
-        ErrorMessage = "El precio debe ser mayor que cero")]
+        ErrorMessage = "El precio debe ser mayor que cero",
+        ConvertValueInInvariantCulture = true)]
     public decimal Price { get; set; }
 
     [MaxLength(500, ErrorMessage = "La descripcion no puede superar los 500 caracteres")]
@@ -43,6 +44,7 @@ public class ProductDto
 public class ProductPriceDto
 {
     [Range(typeof(decimal), "0.01", "999999999",
-        ErrorMessage = "El precio debe ser mayor que cero")]
+        ErrorMessage = "El precio debe ser mayor que cero"
+        )]
     public decimal Price { get; set; }
 }

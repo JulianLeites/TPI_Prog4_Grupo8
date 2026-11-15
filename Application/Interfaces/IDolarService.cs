@@ -8,5 +8,5 @@ namespace Application.Interfaces;
 
 public interface IDolarService
 {
-    Task<decimal> GetDolarOficialVentaAsync();
+    Task<decimal?> GetDolarOficialVentaAsync();
 }
