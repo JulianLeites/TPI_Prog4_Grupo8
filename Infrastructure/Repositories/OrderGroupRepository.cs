@@ -14,6 +14,13 @@ public class OrderGroupRepository
     {
     }
 
+    public override async Task<IEnumerable<OrderGroup>> GetAllAsync()
+    {
+        return await _dbSet
+            .Include(og => og.Details)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<OrderGroup>> GetByOrderIdAsync(int orderId)
     {
         return await _context.OrderGroups

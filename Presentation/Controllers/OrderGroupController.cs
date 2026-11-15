@@ -95,7 +95,7 @@ public class OrderGroupController : ControllerBase
     }
 
     [HttpPatch("{id:int}/State")]
-    [Authorize(Roles = "kitchen,admin")]
+    [Authorize(Roles = "kitchen,admin,waiter")]
     public async Task<IActionResult> ChangeState(
        int id,
        [FromBody] OrderGroupState newState)

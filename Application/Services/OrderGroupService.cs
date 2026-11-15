@@ -28,7 +28,6 @@ public class OrderGroupService : IOrderGroupService
 
         return groups.Select(MapToDto);
     }
-
     public async Task<IEnumerable<OrderGroupDto>> GetByStateAsync(OrderGroupState? state)
     {
         if (state.HasValue && !Enum.IsDefined(state.Value))
@@ -40,7 +39,6 @@ public class OrderGroupService : IOrderGroupService
 
         return groups.Select(MapToDto);
     }
-
     public async Task<OrderGroupDto?> GetByIdAsync(int id)
     {
         var group = await _orderGroupRepository.GetByIdWithDetailsAsync(id);
@@ -50,7 +48,6 @@ public class OrderGroupService : IOrderGroupService
 
         return MapToDto(group);
     }
-
     public async Task<OrderGroupDto> CreateAsync(int orderId)
     {
         if(orderId <= 0)
@@ -79,7 +76,6 @@ public class OrderGroupService : IOrderGroupService
 
         return MapToDto(group);
     }
-
     public async Task<OrderGroupDto?> ChangeStateAsync(int id, OrderGroupState newState)
     {
         if(id <= 0)

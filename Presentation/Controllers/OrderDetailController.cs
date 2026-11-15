@@ -49,7 +49,7 @@ public class OrderDetailController : ControllerBase
         return Ok(orderDetail);
     }
         
-    [HttpGet("Order/{id:int}")]
+    [HttpGet("OrderGroup/{id:int}")]
     [Authorize(Roles = "waiter,admin,user")]
     public async Task<IActionResult> GetDetailsByOrderGroupId(int id)
     {
