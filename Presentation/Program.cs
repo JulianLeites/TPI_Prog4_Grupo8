@@ -74,6 +74,8 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
+builder.Services.AddScoped<IOrderGroupService, OrderGroupService>();
+builder.Services.AddScoped<IOrderGroupRepository, OrderGroupRepository>();
 
 builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();

@@ -11,14 +11,12 @@ public class OrderDto
     public OrderState State { get; set; }
     public decimal Total { get; set; }
     public int Table_id { get; set; }
-    public ICollection<OrderDetailDto> Details { get; set; } = new List<OrderDetailDto>();
+    public ICollection<OrderProductSummaryDto> Details { get; set; } = new List<OrderProductSummaryDto>();
 }
 
 public class OrderCreateDto
 {
     public int Table_id { get; set; }
-    public int Product_id { get; set; }
-    public int Quantity { get; set; }
 }
 
 public class ChangeOrderStateDto

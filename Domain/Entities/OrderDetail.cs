@@ -12,11 +12,11 @@ namespace Domain.Entities
         public decimal UnitPrice { get; set; }
         public decimal Subtotal { get; set; }
         public int Product_id { get; set; }
-        public int Order_id { get; set; }
+        public int OrderGroup_id { get; set; }
         public Product product { get; set; } = null!;
         
         [JsonIgnore]
-        public Order order { get; set;}  = null!;
+        public OrderGroup orderGroup { get; set;}  = null!;
         public decimal CalculateSubtotal()
         {
             Subtotal = UnitPrice * Quantity;

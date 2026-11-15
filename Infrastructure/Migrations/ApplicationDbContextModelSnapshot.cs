@@ -54,7 +54,7 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Order_id")
+                    b.Property<int>("OrderGroup_id")
                         .HasColumnType("int");
 
                     b.Property<int>("Product_id")
@@ -71,11 +71,32 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Order_id");
+                    b.HasIndex("OrderGroup_id");
 
                     b.HasIndex("Product_id");
 
                     b.ToTable("OrderDetails");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderGroups");
                 });
 
             modelBuilder.Entity("Domain.Entities.PasswordReset", b =>
@@ -323,9 +344,9 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.OrderDetail", b =>
                 {
-                    b.HasOne("Domain.Entities.Order", "order")
+                    b.HasOne("Domain.Entities.OrderGroup", "orderGroup")
                         .WithMany("Details")
-                        .HasForeignKey("Order_id")
+                        .HasForeignKey("OrderGroup_id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -335,9 +356,20 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("order");
+                    b.Navigation("orderGroup");
 
                     b.Navigation("product");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", "order")
+                        .WithMany("OrderGroups")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("order");
                 });
 
             modelBuilder.Entity("Domain.Entities.PasswordReset", b =>
@@ -400,6 +432,11 @@ namespace Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.Navigation("OrderGroups");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
                 {
                     b.Navigation("Details");
                 });

@@ -10,35 +10,16 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ITableRepository _tableRepository;
-    private readonly IProductRepository _productRepository;
-    private readonly IOrderDetailRepository _orderDetailRepository;
-    public OrderService(IOrderRepository repository, ITableRepository tableRepository, IProductRepository productRepository, IOrderDetailRepository orderDetailRepository)
+    public OrderService(IOrderRepository repository, ITableRepository tableRepository)
     {
         _tableRepository = tableRepository;
         _orderRepository = repository;
-        _productRepository = productRepository;
-        _orderDetailRepository = orderDetailRepository;
     } 
     public async Task<IEnumerable<OrderDto>> GetAllAsync()
     {
         var orders = await _orderRepository.GetAllAsync();
 
-        return orders.Select(order => new OrderDto
-        {
-            Id = order.Id,
-            Total = order.Total,
-            Table_id = order.Table_id,
-            State = order.State,
-            Details = order.Details.Select(d => new OrderDetailDto
-            {
-                Id = d.Id,
-                Quantity = d.Quantity,
-                UnitPrice = d.UnitPrice,
-                Subtotal = d.Subtotal,
-                Product_id = d.Product_id,
-                Order_id = d.Order_id
-            }).ToList()
-        });
+        return orders.Select(MapToDto);
     }
 
     public async Task<OrderDto?> GetByIdAsync(int id)
@@ -48,43 +29,12 @@ public class OrderService : IOrderService
         if (order is null)
             return null;
 
-        return new OrderDto
-        {
-            Id = order.Id,
-            Total = order.Total,
-            Table_id = order.Table_id,
-            State = order.State,
-            Details = order.Details.Select(d => new OrderDetailDto
-            {
-                Id = d.Id,
-                Quantity = d.Quantity,
-                UnitPrice = d.UnitPrice,
-                Subtotal = d.Subtotal,
-                Product_id = d.Product_id,
-                Order_id = d.Order_id
-            }).ToList()
-        };
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var order = await _orderRepository.GetByIdAsync(id);
-
-        if (order is null)
-            return false;
-
-        await _orderRepository.DeleteWithDetailsAsync(order);
-
-        return true;
+        return MapToDto(order);
     }
 
     public async Task<OrderDto> CreateAsync(OrderCreateDto dto)
     {
-        if (dto is null)
-            throw new ArgumentNullException(nameof(dto));
-
-        if (dto.Quantity <= 0)
-            throw new ArgumentException("La cantidad debe ser mayor a cero");
+        ArgumentNullException.ThrowIfNull(dto);
 
         var table = await _tableRepository.GetByIdAsync(dto.Table_id);
 
@@ -93,115 +43,92 @@ public class OrderService : IOrderService
         }
 
         if (table.State != TableState.Occupied)
-            throw new ArgumentException("No se pueden crear pedidos en mesas desocupadas");
+            throw new InvalidOperationException("No se pueden crear pedidos en mesas desocupadas");
 
-        var product = await _productRepository.GetByIdAsync(dto.Product_id);
+        var existingOrder = await _orderRepository.GetActiveOrderByTableIdAsync(dto.Table_id);
 
-        if(product is null)
-            throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
-
-        var detail = new OrderDetail
-        {
-            Quantity = dto.Quantity,
-            UnitPrice = product.Price,
-            Product_id = dto.Product_id,
-        };
-
-        detail.Subtotal = detail.CalculateSubtotal();
+        if (existingOrder is not null)
+            throw new InvalidOperationException("La mesa ya tiene una orden activa");
 
         var order = new Order
         {
             Table_id = dto.Table_id,
-            Details = new List<OrderDetail> { detail }
+            State = OrderState.Active,
+            Total = 0
         };
-
-        order.Total = order.CalculateTotal();
 
         await _orderRepository.AddAsync(order);
 
-        return new OrderDto
-        {
-            Id = order.Id,
-            Total = order.Total,
-            Table_id = order.Table_id,
-            State = order.State,
-            Details = new List<OrderDetailDto>
-            {
-                new OrderDetailDto
-                {
-                    Id = detail.Id,
-                    Quantity = detail.Quantity,
-                    UnitPrice = detail.UnitPrice,
-                    Subtotal = detail.Subtotal,
-                    Product_id = detail.Product_id,
-                    Order_id = detail.Order_id
-                }
-            }
-        };
-    }
-
-    public async Task<OrderDto?> ChangeStateAsync(int id, ChangeOrderStateDto dto)
-    {
-        
-        var order = await _orderRepository.GetByIdAsync(id);
-
-        if (order is null){
-            return null;
-        }
-
-        order.State = dto.State;
-
-        await _orderRepository.UpdateAsync(order);
-
-        return new OrderDto
-        {
-            Id = order.Id,
-            Total = order.Total,
-            Table_id = order.Table_id,
-            State = order.State
-        };
+        return MapToDto(order);
     }
 
     public async Task<IEnumerable<OrderDto>> GetOrdersByTableIdAsync(int tableId)
     {
         var orders = await _orderRepository.GetOrdersByTableIdAsync(tableId);
 
-        return orders.Select(order => new OrderDto
-        {
-            Id = order.Id,
-            Total = order.Total,
-            Table_id = order.Table_id,
-            State = order.State,
-            Details = order.Details.Select(d => new OrderDetailDto
-            {
-                Id = d.Id,
-                Quantity = d.Quantity,
-                UnitPrice = d.UnitPrice,
-                Subtotal = d.Subtotal,
-                Product_id = d.Product_id,
-                Order_id = d.Order_id
-            }).ToList()
-        });
+        return orders.Select(MapToDto);
     }
-    public async Task<IEnumerable<OrderDto>> GetOrdersInPreparationAsync()
-    {
-        var orders = await _orderRepository.GetOrdersInPreparationAsync();
 
-        return orders.Select(order => new OrderDto
+    public async Task<OrderDto?> ChangeStateAsync(int id, ChangeOrderStateDto dto)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        var order = await _orderRepository.GetByIdAsync(id);
+
+        if (order is null)
+            return null;
+
+        if (order.State == OrderState.Closed)
+            throw new InvalidOperationException(
+                "La orden ya se encuentra cerrada.");
+
+        if (dto.State != OrderState.Closed)
+            throw new InvalidOperationException(
+                "La única transición permitida es Active → Closed.");
+
+        if (order.OrderGroups.Any(
+            group => group.State != OrderGroupState.Delivered))
+        {
+            throw new InvalidOperationException(
+                "No se puede cerrar la orden mientras existan grupos pendientes de entrega.");
+        }
+
+        var table = await _tableRepository.GetByIdAsync(order.Table_id);
+
+        if (table is null)
+            throw new InvalidOperationException(
+                "No se encontró la mesa asociada a la orden.");
+
+        await _orderRepository.CloseOrderAndFreeTableAsync(order, table);
+
+        return MapToDto(order);
+    }
+
+    private static OrderDto MapToDto(Order order)
+    {
+        var details = order.OrderGroups
+            .SelectMany(group => group.Details)
+            .GroupBy(detail => new
+            {
+                detail.Product_id,
+                detail.UnitPrice
+            })
+            .Select(group => new OrderProductSummaryDto
+            {
+                Product_id = group.Key.Product_id,
+                UnitPrice = group.Key.UnitPrice,
+                Quantity = group.Sum(detail => detail.Quantity),
+                Subtotal = group.Sum(detail => detail.Subtotal)
+            })
+            .ToList();
+
+        return new OrderDto
         {
             Id = order.Id,
-            Total = order.Total,
             Table_id = order.Table_id,
             State = order.State,
-            Details = order.Details.Select(d => new OrderDetailDto
-            {
-                Id = d.Id,
-                Quantity = d.Quantity,
-                UnitPrice = d.UnitPrice,
-                Subtotal = d.Subtotal,
-                Product_id = d.Product_id,
-                Order_id = d.Order_id
-            }).ToList()
-        });
+            Total = details.Sum(detail => detail.Subtotal),
+            Details = details
+        };
     }
 }

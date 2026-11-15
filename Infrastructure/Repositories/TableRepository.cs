@@ -69,7 +69,7 @@ public class TableRepository
         if (table is null)
             return false;
 
-        table.IsDeleted = false;
+        table.IsDeleted = true;
 
         await _context.SaveChangesAsync();
 
