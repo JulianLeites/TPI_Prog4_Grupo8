@@ -7,7 +7,7 @@ namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "admin")]
+[Authorize(Roles = "waiter,admin")]
 public class ProductCategoriesController : ControllerBase
 {
     private readonly IProductCategoryService _service;
