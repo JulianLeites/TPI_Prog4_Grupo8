@@ -80,29 +80,6 @@ public class OrderDetailController : ControllerBase
         return Ok(orderDetails);
     }
 
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "waiter,admin")]
-    public async Task<IActionResult> Update(int id, OrderDetailUpdateDto dto)
-    {
-        if (id <= 0)
-            return Problem(
-                statusCode: 400,
-                title: "Identificador inválido",
-                detail: "El ID debe ser mayor que cero."
-            );
-
-        var orderDetail = await _orderDetailService.UpdateAsync(id, dto);
-
-        if (orderDetail is null)
-            return Problem(
-                statusCode: 404,
-                title: "Detalle no encontrado",
-                detail: "No se encontró el detalle de pedido solicitado."
-            );
-
-        return Ok(orderDetail);
-    }
-
     [HttpPatch("{id:int}/Quantity")]
     [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> ChangeQuantity(int id, OrderDetailQuantityDto dto)

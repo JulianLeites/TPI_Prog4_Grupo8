@@ -9,10 +9,14 @@ namespace Application.Services;
 public class TableService : ITableService
 {
     private readonly ITableRepository _tableRepository;
+    private readonly IOrderRepository _orderRepository;
 
-    public TableService(ITableRepository tableRepository)
+    public TableService(
+        ITableRepository tableRepository,
+        IOrderRepository orderRepository)
     {
         _tableRepository = tableRepository;
+        _orderRepository = orderRepository;
     }
 
     public async Task<IEnumerable<TableDto>> GetAllAsync(TableState? state)
@@ -64,7 +68,6 @@ public class TableService : ITableService
             State = table.State
         };
     }
-
     public async Task<TableDto?> UpdateAsync(int id, TableUpdateDto dto)
     {
         if (dto is null)
@@ -108,6 +111,11 @@ public class TableService : ITableService
 
         if (table.State == TableState.Occupied)
             throw new InvalidOperationException("No se puede eliminar una mesa que está ocupada.");
+
+        var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
+
+        if (hasOpenOrders)
+            throw new InvalidOperationException("No se puede borrar una mesa que tiene pedidos abiertos");
 
         var now = DateTime.Now;
         var date = DateOnly.FromDateTime(now);
@@ -164,6 +172,14 @@ public class TableService : ITableService
 
         if (table is null)
             return null;
+
+        if(dto.State == TableState.Unoccupied)
+        {
+            var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
+
+            if (hasOpenOrders)
+                throw new InvalidOperationException("No se puede liberar una mesa que tiene pedidos abiertos");
+        }
 
         table.State = dto.State;
 

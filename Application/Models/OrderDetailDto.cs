@@ -23,10 +23,3 @@ public class OrderDetailQuantityDto
 {
     public int Quantity { get; set; }
 }
-
-public class OrderDetailUpdateDto
-{
-    public int Product_id { get; set; }
-
-    public int Quantity { get; set; }
-}
