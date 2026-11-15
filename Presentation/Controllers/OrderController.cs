@@ -26,7 +26,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "waiter,admin,user")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetById(int id)
     {
         if (id <= 0)
@@ -49,7 +49,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpPatch("{id:int}/state")]
-    [Authorize(Roles = "waiter,admin,kitchen")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)
     {
         if (id <= 0)
