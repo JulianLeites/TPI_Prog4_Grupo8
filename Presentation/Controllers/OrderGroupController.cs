@@ -19,15 +19,6 @@ public class OrderGroupController : ControllerBase
         _orderGroupService = orderGroupService;
     }
 
-    [HttpGet]
-    [Authorize(Roles = "waiter,admin,kitchen")]
-    public async Task<IActionResult> GetAll()
-    {
-        var groups = await _orderGroupService.GetByStateAsync(OrderGroupState.InPreparation);
-
-        return Ok(groups);
-    }
-
     [HttpGet("{id:int}")]
     [Authorize]
     public async Task<IActionResult> GetById(int id)
@@ -67,11 +58,11 @@ public class OrderGroupController : ControllerBase
         return Ok(groups);
     }
 
-    [HttpGet("State/{state}")]
+    [HttpGet("State")]
     [Authorize(Roles = "waiter,admin,kitchen")]
-    public async Task<IActionResult> GetByState(OrderGroupState state)
+    public async Task<IActionResult> GetByState(OrderGroupState? state)
     {
-        if (!Enum.IsDefined(state))
+        if (state.HasValue && !Enum.IsDefined(state.Value))
             return Problem(
                 statusCode: 400,
                 title: "Estado inválido",

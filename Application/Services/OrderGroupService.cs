@@ -29,12 +29,14 @@ public class OrderGroupService : IOrderGroupService
         return groups.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<OrderGroupDto>> GetByStateAsync(OrderGroupState state)
+    public async Task<IEnumerable<OrderGroupDto>> GetByStateAsync(OrderGroupState? state)
     {
-        if (!Enum.IsDefined(state))
+        if (state.HasValue && !Enum.IsDefined(state.Value))
             throw new ArgumentException("El estado indicado no es valido");
 
-        var groups = await _orderGroupRepository.GetByStateAsync(state);
+        var groups = state.HasValue
+            ? await _orderGroupRepository.GetByStateAsync(state.Value)
+            : await _orderGroupRepository.GetAllAsync();
 
         return groups.Select(MapToDto);
     }

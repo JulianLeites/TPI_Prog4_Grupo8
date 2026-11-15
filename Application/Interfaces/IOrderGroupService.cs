@@ -7,7 +7,7 @@ public interface IOrderGroupService
 {
     Task<IEnumerable<OrderGroupDto>> GetByOrderIdAsync(int orderId);
 
-    Task<IEnumerable<OrderGroupDto>> GetByStateAsync(OrderGroupState state);
+    Task<IEnumerable<OrderGroupDto>> GetByStateAsync(OrderGroupState? state);
 
     Task<OrderGroupDto?> GetByIdAsync(int id);
 
