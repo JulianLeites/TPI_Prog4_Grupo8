@@ -24,9 +24,8 @@ public class ProductDto
         ErrorMessage = "El nombre no pude tener solo espacios")]
     public string Name { get; set; } = string.Empty;
 
-    [Range(typeof(decimal), "0.01", "999999999",
-        ErrorMessage = "El precio debe ser mayor que cero",
-        ConvertValueInInvariantCulture = true)]
+    [Range( 0.01, 999999999,
+        ErrorMessage = "El precio debe ser mayor que cero")]
     public decimal Price { get; set; }
 
     [MaxLength(500, ErrorMessage = "La descripcion no puede superar los 500 caracteres")]
@@ -43,7 +42,8 @@ public class ProductDto
 
 public class ProductPriceDto
 {
-    [Range(typeof(decimal), "0.01", "999999999",
+
+    [Range(0.01, 999999999,
         ErrorMessage = "El precio debe ser mayor que cero"
         )]
     public decimal Price { get; set; }

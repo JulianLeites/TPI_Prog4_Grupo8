@@ -11,6 +11,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
 using Presentation.Exceptions;
+using System.Globalization;
+
+Console.WriteLine(CultureInfo.CurrentCulture.Name);
+Console.WriteLine(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+Console.WriteLine(CultureInfo.CurrentUICulture.Name);
 
 var builder = WebApplication.CreateBuilder(args);
 
