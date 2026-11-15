@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
+    public DbSet<OrderGroup> OrderGroups { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
@@ -67,15 +68,21 @@ public class ApplicationDbContext : DbContext
             .WithMany(t => t.Reservations);
 
         modelBuilder.Entity<OrderDetail>()
-            .HasOne(od => od.order)
-            .WithMany(o => o.Details)
-            .HasForeignKey(od => od.Order_id)
+            .HasOne(od => od.orderGroup)
+            .WithMany(og => og.Details)
+            .HasForeignKey(od => od.OrderGroup_id)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<OrderDetail>()
             .HasOne(od => od.product)
             .WithMany()
             .HasForeignKey(od => od.Product_id)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<OrderGroup>()
+            .HasOne(og => og.order)
+            .WithMany(o => o.OrderGroups)
+            .HasForeignKey(og => og.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Order>()

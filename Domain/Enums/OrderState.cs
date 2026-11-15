@@ -6,6 +6,6 @@ namespace Domain.Enums;
 
 public enum OrderState
 {
-    EnPreparacion = 0,
-    Listo = 1
+    Active = 0,
+    Closed = 1
 }

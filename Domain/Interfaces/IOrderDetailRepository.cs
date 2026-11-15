@@ -4,9 +4,9 @@ namespace Domain.Interfaces;
 
 public interface IOrderDetailRepository : IGenericRepository<OrderDetail>
 {
-    Task<List<OrderDetail>> GetDetailsByOrderIdAsync(int orderId);
+    Task<List<OrderDetail>> GetDetailsByOrderGroupIdAsync(int orderGroupId);
 
     Task<List<OrderDetail>> GetDetailsByProductIdAsync(int productId);
 
-    Task<OrderDetail?> GetExistingDetailAsync(int orderId, int productId);
+    Task<OrderDetail?> GetExistingDetailAsync(int orderGroupId, int productId, decimal unitPrice);
 }

@@ -7,7 +7,7 @@ public class OrderDetailDto
     public decimal UnitPrice { get; set; }
     public decimal Subtotal { get; set; }
     public int Product_id { get; set; }
-    public int Order_id { get; set; } 
+    public int OrderGroup_id { get; set; } 
 
 }
 
@@ -15,7 +15,7 @@ public class CreateOrderDetailDto
 {
     public int Quantity { get; set; }
     public int Product_id { get; set; }
-    public int Order_id { get; set; } 
+    public int OrderGroup_id { get; set; } 
 
 }
 

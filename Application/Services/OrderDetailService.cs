@@ -10,271 +10,241 @@ public class OrderDetailService : IOrderDetailService
 {
     private readonly IOrderDetailRepository _orderDetailRepository; 
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderGroupRepository _orderGroupRepository;
     private readonly IProductRepository _productRepository;
     private readonly ITableRepository _tableRepository;
 
-    public OrderDetailService( IOrderDetailRepository orderDetailRepository, IOrderRepository orderRepository, IProductRepository productRepository, ITableRepository tableRepository)
+    public OrderDetailService( IOrderDetailRepository orderDetailRepository,
+        IOrderRepository orderRepository,
+        IProductRepository productRepository,
+        ITableRepository tableRepository,
+        IOrderGroupRepository orderGroupRepository)
     {
         _orderDetailRepository = orderDetailRepository;
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _tableRepository = tableRepository;
+        _orderGroupRepository = orderGroupRepository;
     } 
 
     public async Task<IEnumerable<OrderDetailDto>> GetAllAsync()
     {
-        var ordersDetails = await _orderDetailRepository.GetAllAsync();
+        var details = await _orderDetailRepository.GetAllAsync();
 
-        return ordersDetails.Select(orderDetail => new OrderDetailDto
-        {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id 
-        });
+        return details.Select(MapToDto);
     }
 
     public async Task<OrderDetailDto?> GetByIdAsync(int id)
     {
-        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+        var detail = await _orderDetailRepository.GetByIdAsync(id);
 
-        if (orderDetail is null)
-            return null;
-
-        return new OrderDetailDto
-        {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id 
-        };
+        return detail is null ? null : MapToDto(detail);
     }
 
-    public async Task<IEnumerable<OrderDetailDto>> GetDetailsByOrderIdAsync(int id)
+    public async Task<IEnumerable<OrderDetailDto>> GetDetailsByOrderGroupIdAsync(int orderGroupId)
     {
-        var orderDetails = await _orderDetailRepository.GetDetailsByOrderIdAsync(id);
+        var details = await _orderDetailRepository
+        .GetDetailsByOrderGroupIdAsync(orderGroupId);
 
-        return orderDetails.Select(orderDetail => new OrderDetailDto
-        {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id 
-        });
+        return details.Select(MapToDto);
     }
 
     public async Task<IEnumerable<OrderDetailDto>> GetDetailsByProductIdAsync(int id)
     {
-        var orderDetails = await _orderDetailRepository.GetDetailsByProductIdAsync(id);
+        var details = await _orderDetailRepository.GetDetailsByProductIdAsync(id);
 
-        return orderDetails.Select(orderDetail => new OrderDetailDto
-        {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id 
-        });
+        return details.Select(MapToDto);
     }
-    
+
     public async Task<OrderDetailDto?> UpdateAsync(int id, OrderDetailUpdateDto dto)
     {
-        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+        ArgumentNullException.ThrowIfNull(dto);
 
-        if (orderDetail is null)
+        var detail = await _orderDetailRepository.GetByIdAsync(id);
+
+        if (detail is null)
             return null;
 
+        var group = await ValidateOrderGroupAsync(detail.OrderGroup_id);
+
+        if (dto.Quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a cero.");
+
         var product = await _productRepository.GetByIdAsync(dto.Product_id);
-        var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
-
-        if (order is null)
-            throw new InvalidOperationException($"El pedido con id {orderDetail.Order_id} no existe");
-
-        await ValidateOrderTableAsync(order);
 
         if (product is null)
-            throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
-        
-        if (dto.Quantity <= 0)
-            throw new ArgumentException("La cantidad debe ser mayor a 0");
+            throw new ArgumentException($"El producto con id {dto.Product_id} no existe.");
 
-        orderDetail.Product_id = dto.Product_id;
-        orderDetail.Quantity = dto.Quantity;
-        orderDetail.UnitPrice = product.Price;
-        orderDetail.Subtotal = orderDetail.CalculateSubtotal();
+        var existingDetail = group.Details.FirstOrDefault(d =>
+        d.Id != detail.Id &&
+        d.Product_id == dto.Product_id &&
+        d.UnitPrice == product.Price);
 
-        await _orderDetailRepository.UpdateAsync(orderDetail);
-        order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
-
-        order.Total = order.CalculateTotal();
-
-        await _orderRepository.UpdateAsync(order);
-        return new OrderDetailDto
+        if(existingDetail is not null)
         {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id
-        };
+            existingDetail.Quantity += dto.Quantity;
+            existingDetail.Subtotal = existingDetail.CalculateSubtotal();
+
+            await _orderDetailRepository.UpdateAsync(existingDetail);
+            await _orderDetailRepository.DeleteAsync(detail);
+
+            await UpdateOrderTotalAsync(group.OrderId);
+
+            return MapToDto(existingDetail);
+        }
+
+        detail.Product_id = dto.Product_id;
+        detail.Quantity = dto.Quantity;
+        detail.UnitPrice = product.Price;
+        detail.Subtotal = detail.CalculateSubtotal();
+
+        await _orderDetailRepository.UpdateAsync(detail);
+
+        await UpdateOrderTotalAsync(group.OrderId);
+
+        return MapToDto(detail);
     }
 
     public async Task<OrderDetailDto?> ChangeQuantityAsync(int id, OrderDetailQuantityDto dto)
     {
-        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+        ArgumentNullException.ThrowIfNull(dto);
 
-        if (orderDetail is null)
+        var detail = await _orderDetailRepository.GetByIdAsync(id);
+
+        if (detail is null)
             return null;
+
+        var group = await ValidateOrderGroupAsync(detail.OrderGroup_id);
+
         if (dto.Quantity <= 0)
-            throw new ArgumentException("La cantidad debe ser mayor a 0");
+            throw new ArgumentException("La cantidad debe ser mayor a cero.");
 
-        var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
+        detail.Quantity = dto.Quantity;
+        detail.Subtotal = detail.CalculateSubtotal();
 
-        if (order is null)
-            throw new InvalidOperationException($"El pedido con id {orderDetail.Order_id} no existe");
+        await _orderDetailRepository.UpdateAsync(detail);
 
-        await ValidateOrderTableAsync(order);
+        await UpdateOrderTotalAsync(group.OrderId);
 
-        orderDetail.Quantity = dto.Quantity;
-        orderDetail.Subtotal = orderDetail.CalculateSubtotal();
-
-        await _orderDetailRepository.UpdateAsync(orderDetail);
-        order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
-
-        order.Total = order.CalculateTotal();
-
-        await _orderRepository.UpdateAsync(order);
-        return new OrderDetailDto
-        {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id
-        };
+        return MapToDto(detail);
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var orderDetail = await _orderDetailRepository.GetByIdAsync(id);
+        var detail = await _orderDetailRepository.GetByIdAsync(id);
 
-        if (orderDetail is null)
-            return false;
-            
-        var order = await _orderRepository.GetByIdAsync(orderDetail.Order_id);
-
-        if (order is null)
+        if (detail is null)
             return false;
 
-        var details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+        var group = await ValidateOrderGroupAsync(detail.OrderGroup_id);
 
-        await _orderDetailRepository.DeleteAsync(orderDetail);
+        bool isLastDetail = group.Details.Count == 1;
 
-        if(details.Count == 1)
+        await _orderDetailRepository.DeleteAsync(detail);
+
+        if (isLastDetail)
         {
-            await _orderRepository.DeleteAsync(order);
-            return true;
+            await _orderGroupRepository.DeleteAsync(group);
         }
 
-        order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
-
-        order.Total = order.CalculateTotal();
-
-        await _orderRepository.UpdateAsync(order);
+        await UpdateOrderTotalAsync(group.OrderId);
 
         return true;
     }
 
     public async Task<OrderDetailDto> CreateAsync(CreateOrderDetailDto dto)
     {
+        ArgumentNullException.ThrowIfNull(dto);
+
+        if (dto.Quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a cero.");
+
+        var group = await ValidateOrderGroupAsync(dto.OrderGroup_id);
 
         var product = await _productRepository.GetByIdAsync(dto.Product_id);
-        
-        if(product is null){
-            throw new ArgumentException($"El producto con id {dto.Product_id} no existe");
-        }
 
-        var order = await _orderRepository.GetByIdAsync(dto.Order_id);
-        
-        if(order is null){
-            throw new ArgumentException($"La orden con id {dto.Order_id} no existe");
-        }
+        if (product is null)
+            throw new ArgumentException($"El producto con id {dto.Product_id} no existe.");
 
-        await ValidateOrderTableAsync(order);
-        
-        if (dto.Quantity <= 0)
-            throw new ArgumentException("La cantidad debe ser mayor a 0");
+        var existingDetail = await _orderDetailRepository.GetExistingDetailAsync(
+            dto.OrderGroup_id,
+            dto.Product_id,
+            product.Price);
 
-        var existingDetail = await _orderDetailRepository.GetExistingDetailAsync(dto.Order_id, dto.Product_id);
-        
-        if(existingDetail != null){
+        if (existingDetail is not null)
+        {
             existingDetail.Quantity += dto.Quantity;
             existingDetail.Subtotal = existingDetail.CalculateSubtotal();
 
             await _orderDetailRepository.UpdateAsync(existingDetail);
 
-            order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
-            order.Total = order.CalculateTotal();
+            await UpdateOrderTotalAsync(group.OrderId);
 
-            await _orderRepository.UpdateAsync(order);
-
-            return new OrderDetailDto
-            {
-                Id = existingDetail.Id,
-                Quantity = existingDetail.Quantity,
-                UnitPrice = existingDetail.UnitPrice,
-                Subtotal = existingDetail.Subtotal,
-                Product_id = existingDetail.Product_id,
-                Order_id = existingDetail.Order_id
-            };
+            return MapToDto(existingDetail);
         }
 
-        var orderDetail = new OrderDetail
+        var detail = new OrderDetail
         {
             Quantity = dto.Quantity,
             UnitPrice = product.Price,
             Product_id = dto.Product_id,
-            Order_id = dto.Order_id 
+            OrderGroup_id = dto.OrderGroup_id
         };
 
-        orderDetail.Subtotal = orderDetail.CalculateSubtotal();
+        detail.Subtotal = detail.CalculateSubtotal();
 
-        await _orderDetailRepository.AddAsync(orderDetail);
+        await _orderDetailRepository.AddAsync(detail);
 
-        order.Details = await _orderDetailRepository.GetDetailsByOrderIdAsync(order.Id);
+        await UpdateOrderTotalAsync(group.OrderId);
 
-        order.Total = order.CalculateTotal();
+        return MapToDto(detail);
+    }
 
-        await _orderRepository.UpdateAsync(order);
-
+    private static OrderDetailDto MapToDto(OrderDetail detail)
+    {
         return new OrderDetailDto
         {
-            Id = orderDetail.Id,
-            Quantity = orderDetail.Quantity,
-            UnitPrice = orderDetail.UnitPrice,
-            Subtotal = orderDetail.Subtotal,
-            Product_id = orderDetail.Product_id,
-            Order_id = orderDetail.Order_id
+            Id = detail.Id,
+            Quantity = detail.Quantity,
+            UnitPrice = detail.UnitPrice,
+            Subtotal = detail.Subtotal,
+            Product_id = detail.Product_id,
+            OrderGroup_id = detail.OrderGroup_id
         };
     }
 
-    private async Task ValidateOrderTableAsync(Order order)
+    private async Task<OrderGroup> ValidateOrderGroupAsync(int orderGroupId)
     {
-        var table = await _tableRepository.GetByIdAsync(order.Table_id);
+        var group = await _orderGroupRepository.GetByIdWithDetailsAsync(orderGroupId);
 
-        if (table is null)
-            throw new InvalidOperationException($"La mesa con id {order.Table_id} no existe");
+        if (group is null)
+            throw new ArgumentException($"El grupo con id {orderGroupId} no existe.");
 
-        if (table.State != TableState.Occupied)
-            throw new InvalidOperationException("No se pueden modificar detalles de un pedido cuya mesa no está ocupada");
+        if (group.order is null)
+            throw new InvalidOperationException("El grupo no tiene una orden asociada.");
+
+        if (group.order.State != OrderState.Active)
+            throw new InvalidOperationException("No se pueden modificar detalles de una orden cerrada.");
+
+        if (group.State != OrderGroupState.InPreparation)
+            throw new InvalidOperationException("Solo se pueden modificar grupos en preparación.");
+
+        var table = await _tableRepository.GetByIdAsync(group.order.Table_id);
+
+        if (table is null || table.State != TableState.Occupied)
+            throw new InvalidOperationException("La mesa asociada no está ocupada.");
+
+        return group;
+    }
+
+    private async Task UpdateOrderTotalAsync(int orderId)
+    {
+        var groups = await _orderGroupRepository.GetByOrderIdAsync(orderId);
+
+        var total = groups
+            .SelectMany(group => group.Details)
+            .Sum(detail => detail.Subtotal);
+
+        await _orderRepository.UpdateTotalAsync(orderId, total);
     }
 }

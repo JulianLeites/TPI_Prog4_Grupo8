@@ -51,16 +51,16 @@ public class OrderDetailController : ControllerBase
         
     [HttpGet("Order/{id:int}")]
     [Authorize(Roles = "waiter,admin,user")]
-    public async Task<IActionResult> GetDetailsByOrderId(int id)
+    public async Task<IActionResult> GetDetailsByOrderGroupId(int id)
     {
         if (id <= 0)
             return Problem(
                 statusCode: 400,
                 title: "Identificador inválido",
-                detail: "El ID del pedido debe ser mayor que cero."
+                detail: "El ID del grupo de pedido debe ser mayor que cero."
             );
 
-        var orderDetails = await _orderDetailService.GetDetailsByOrderIdAsync(id);
+        var orderDetails = await _orderDetailService.GetDetailsByOrderGroupIdAsync(id);
 
         return Ok(orderDetails);
     }
