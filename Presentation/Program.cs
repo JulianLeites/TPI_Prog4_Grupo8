@@ -11,6 +11,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
 using Presentation.Exceptions;
+using System.Globalization;
+
+Console.WriteLine(CultureInfo.CurrentCulture.Name);
+Console.WriteLine(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+Console.WriteLine(CultureInfo.CurrentUICulture.Name);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,7 +90,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
-builder.Services.AddHttpClient<IDolarService, DolarService>();
+builder.Services.AddHttpClient<IDolarService, DolarService>(client =>
+    client.Timeout = TimeSpan.FromSeconds(5));
 
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();

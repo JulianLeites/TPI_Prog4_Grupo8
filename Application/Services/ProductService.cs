@@ -2,6 +2,7 @@ using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Services;
 
 namespace Application.Services;
 
@@ -64,7 +65,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -85,7 +86,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -116,7 +117,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -150,7 +151,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -181,7 +182,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -198,7 +199,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,
@@ -216,7 +217,7 @@ public class ProductService : IProductService
             Id = product.Id,
             Name = product.Name,
             Price = product.Price,
-            PriceUsd = product.Price / dolarOficial,
+            PriceUsd = CurrencyConverter.ToUsd(product.Price, dolarOficial),
             Description = product.Description,
             ImageUrl = product.ImageUrl,
             ProductCategoryId = product.ProductCategoryId,

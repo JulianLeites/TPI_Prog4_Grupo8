@@ -1,8 +1,10 @@
 using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
-using Domain.Interfaces;
 using Domain.Enums;
+using Domain.Interfaces;
+using Domain.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Application.Services;
 
@@ -10,16 +12,19 @@ public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ITableRepository _tableRepository;
-    public OrderService(IOrderRepository repository, ITableRepository tableRepository)
+    private readonly IDolarService _dolarService;
+    public OrderService(IOrderRepository repository, ITableRepository tableRepository, IDolarService dolarService)
     {
         _tableRepository = tableRepository;
         _orderRepository = repository;
+        _dolarService = dolarService;
     } 
     public async Task<IEnumerable<OrderDto>> GetAllAsync()
     {
         var orders = await _orderRepository.GetAllAsync();
+        var rate = await _dolarService.GetDolarOficialVentaAsync();
 
-        return orders.Select(MapToDto);
+        return orders.Select(order => MapToDto(order, rate));
     }
 
     public async Task<OrderDto?> GetByIdAsync(int id)
@@ -29,7 +34,9 @@ public class OrderService : IOrderService
         if (order is null)
             return null;
 
-        return MapToDto(order);
+        var rate = await _dolarService.GetDolarOficialVentaAsync();
+
+        return MapToDto(order, rate);
     }
 
     public async Task<OrderDto> CreateAsync(OrderCreateDto dto)
@@ -59,14 +66,17 @@ public class OrderService : IOrderService
 
         await _orderRepository.AddAsync(order);
 
-        return MapToDto(order);
+        var rate = await _dolarService.GetDolarOficialVentaAsync();
+
+        return MapToDto(order, rate);
     }
 
     public async Task<IEnumerable<OrderDto>> GetOrdersByTableIdAsync(int tableId)
     {
         var orders = await _orderRepository.GetOrdersByTableIdAsync(tableId);
+        var rate = await _dolarService.GetDolarOficialVentaAsync();
 
-        return orders.Select(MapToDto);
+        return orders.Select(order => MapToDto(order, rate));
     }
 
     public async Task<OrderDto?> ChangeStateAsync(int id, ChangeOrderStateDto dto)
@@ -100,11 +110,12 @@ public class OrderService : IOrderService
                 "No se encontró la mesa asociada a la orden.");
 
         await _orderRepository.CloseOrderAndFreeTableAsync(order, table);
+        var rate = await _dolarService.GetDolarOficialVentaAsync();
 
-        return MapToDto(order);
+        return MapToDto(order, rate);
     }
 
-    private static OrderDto MapToDto(Order order)
+    private static OrderDto MapToDto(Order order, decimal? rate)
     {
         var details = order.OrderGroups
             .SelectMany(group => group.Details)
@@ -122,12 +133,15 @@ public class OrderService : IOrderService
             })
             .ToList();
 
+        var total = details.Sum(detail => detail.Subtotal);
+
         return new OrderDto
         {
             Id = order.Id,
             Table_id = order.Table_id,
             State = order.State,
-            Total = details.Sum(detail => detail.Subtotal),
+            Total = total,
+            TotalUsd = CurrencyConverter.ToUsd(total, rate),
             Details = details
         };
     }

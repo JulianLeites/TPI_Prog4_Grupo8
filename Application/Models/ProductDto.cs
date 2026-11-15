@@ -7,7 +7,7 @@ public class ProductResponseDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
-    public decimal PriceUsd { get; set; }
+    public decimal? PriceUsd { get; set; }
     public string? Description { get; set; }
     public string ImageUrl { get; set; } = string.Empty;
     public int? ProductCategoryId { get; set; }
@@ -24,7 +24,7 @@ public class ProductDto
         ErrorMessage = "El nombre no pude tener solo espacios")]
     public string Name { get; set; } = string.Empty;
 
-    [Range(typeof(decimal), "0.01", "999999999",
+    [Range( 0.01, 999999999,
         ErrorMessage = "El precio debe ser mayor que cero")]
     public decimal Price { get; set; }
 
@@ -42,7 +42,9 @@ public class ProductDto
 
 public class ProductPriceDto
 {
-    [Range(typeof(decimal), "0.01", "999999999",
-        ErrorMessage = "El precio debe ser mayor que cero")]
+
+    [Range(0.01, 999999999,
+        ErrorMessage = "El precio debe ser mayor que cero"
+        )]
     public decimal Price { get; set; }
 }
