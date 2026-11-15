@@ -3,12 +3,19 @@ using Application.Services;
 using Infrastructure.Persistance;
 using Infrastructure.Repositories;
 using Infrastructure.Services;
+using Infrastructure.Initialization;
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
+using Presentation.Exceptions;
+using System.Globalization;
+
+Console.WriteLine(CultureInfo.CurrentCulture.Name);
+Console.WriteLine(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+Console.WriteLine(CultureInfo.CurrentUICulture.Name);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +79,8 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
 builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
+builder.Services.AddScoped<IOrderGroupService, OrderGroupService>();
+builder.Services.AddScoped<IOrderGroupRepository, OrderGroupRepository>();
 
 builder.Services.AddScoped<IOrderDetailService, OrderDetailService>();
 builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
@@ -81,11 +90,13 @@ builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+builder.Services.AddHttpClient<IDolarService, DolarService>(client =>
+    client.Timeout = TimeSpan.FromSeconds(5));
 
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 
-builder.Services.AddScoped<IRoleRepository, RoleRespository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddScoped<ITableRepository, TableRepository>();
@@ -94,7 +105,17 @@ builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<InitialAdminSeeder>();
+builder.Services.AddScoped<RoleSeeder>();
+
+builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+
+builder.Services.AddScoped<IPasswordRecoveryRepository, PasswordRecoveryRepository>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -116,6 +137,8 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -129,5 +152,18 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleSeeder = scope.ServiceProvider
+        .GetRequiredService<RoleSeeder>();
+
+    await roleSeeder.InitializeAsync();
+
+    var adminSeeder = scope.ServiceProvider
+        .GetRequiredService<InitialAdminSeeder>();
+
+    await adminSeeder.InitializeAsync(app.Configuration);
+}
 
 app.Run();

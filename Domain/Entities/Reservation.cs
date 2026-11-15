@@ -12,9 +12,9 @@ namespace Domain.Entities
         public TimeOnly Time { get; set; }
         public int Diners { get; set; }
         public int UserId { get; set; }
-        public ReservationState State { get; set; } = ReservationState.Confirmed;
+        public ReservationState State { get; set; } = ReservationState.Pending;
         public User User { get; set; } = null!;
         public ICollection<Table> Tables { get; set; } = new List<Table>();
-        //enum
+        
     }
 }

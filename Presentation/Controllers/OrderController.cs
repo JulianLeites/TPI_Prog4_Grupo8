@@ -1,7 +1,6 @@
 using Application.Interfaces;
 using Application.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
@@ -19,7 +18,7 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetAll()
     {
         var orders = await _orderService.GetAllAsync();
@@ -27,84 +26,77 @@ public class OrderController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin,User")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetById(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
+
         var order = await _orderService.GetByIdAsync(id);
 
         if (order is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Pedido no encontrado",
+                detail: "No se encontró el pedido solicitado."
+            );
 
         return Ok(order);
     }
 
-    [HttpPut("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> Update(int id, OrderCreateDto dto)
-    {
-        try
-        {
-            var order = await _orderService.UpdateAsync(id, dto);
-
-            if (order is null)
-                return NotFound();
-
-            return Ok(order);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
-
     [HttpPatch("{id:int}/state")]
-    [Authorize(Roles = "Waiter,Admin,Kitchen")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> ChangeState(int id, ChangeOrderStateDto dto)
     {
-        try
-        {
-            var order = await _orderService.ChangeStateAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID del pedido debe ser mayor que cero."
+            );
 
-            if (order is null)
-                return NotFound();
+        var order = await _orderService.ChangeStateAsync(id, dto);
 
-            return Ok(order);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
+        if (order is null)
+            return Problem(
+                statusCode: 404,
+                title: "Pedido no encontrado",
+                detail: "No se encontró el pedido solicitado."
+            );
 
-    [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var deleted = await _orderService.DeleteAsync(id);
-
-        if (!deleted)
-            return NotFound();
-
-        return NoContent();
+        return Ok(order);
     }
 
     [HttpPost]
-    [Authorize(Roles = "Waiter,Admin")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> Create(OrderCreateDto dto)
     {
-        try
-        {
-            var order = await _orderService.CreateAsync(dto);
+        var order = await _orderService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = order.Id },
-                order
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = order.Id },
+            order
+        );
+    }
+
+    [HttpGet("Table/{id:int}")]
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> GetOrdersByTableId(int id)
+    {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID de la mesa debe ser mayor que cero."
             );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+
+        var orders = await _orderService.GetOrdersByTableIdAsync(id);
+        
+        return Ok(orders);
     }
 }

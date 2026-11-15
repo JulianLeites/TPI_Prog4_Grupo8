@@ -1,7 +1,7 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Presentation.Controllers;
@@ -19,94 +19,146 @@ public class TableController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> GetAll()
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> GetAll([FromQuery] TableState? state)
     {
-        var tables = await _tableService.GetAllAsync();
+        if (state.HasValue && !Enum.IsDefined(state.Value))
+            return Problem(
+                statusCode: 400,
+                title: "Estado inválido",
+                detail: "El estado de mesa indicado no es válido."
+            );
+
+        var tables = await _tableService.GetAllAsync(state);
         return Ok(tables);
     }
 
     [HttpGet("{id:int}")]
-    [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> GetById(int id)
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> GetById([FromRoute] int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var table = await _tableService.GetByIdAsync(id);
 
         if (table is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Mesa no encontrada",
+                detail: "No se encontró la mesa solicitada."
+            );
+
+        return Ok(table);
+    }
+
+    [HttpGet("number/{number:int}")]
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> GetByNumber([FromRoute] int number)
+    {
+        if (number <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El número de mesa debe ser mayor que cero."
+            );
+
+        var table = await _tableService.GetByNumberAsync(number);
+
+        if (table is null)
+            return Problem(
+                statusCode: 404,
+                title: "Mesa no encontrada",
+                detail: "No se encontró la mesa solicitada."
+            );
 
         return Ok(table);
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(int id, TableUpdateDto dto)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Update([FromRoute] int id, [FromBody] TableUpdateDto dto)
     {
-        try
-        {
-            var table = await _tableService.UpdateAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
 
-            if (table is null)
-                return NotFound();
+        var table = await _tableService.UpdateAsync(id, dto);
 
-            return Ok(table);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (table is null)
+            return Problem(
+                statusCode: 404,
+                title: "Mesa no encontrada",
+                detail: "No se encontró la mesa solicitada."
+            );
+
+        return Ok(table);
     }
 
     [HttpPatch("{id:int}/state")]
-    [Authorize(Roles = "Waiter,Admin")]
-    public async Task<IActionResult> ChangeState(
-        int id,
-        ChangeTableStateDto dto)
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> ChangeState([FromRoute] int id,[FromBody] ChangeTableStateDto dto)
     {
-        try
-        {
-            var table = await _tableService.ChangeStateAsync(id, dto);
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
 
-            if (table is null)
-                return NotFound();
+        var table = await _tableService.ChangeStateAsync(id, dto);
 
-            return Ok(table);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (table is null)
+            return Problem(
+                statusCode: 404,
+                title: "Mesa no encontrada",
+                detail: "No se encontró la mesa solicitada."
+            );
+
+        return Ok(table);
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(int id)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Delete([FromRoute] int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var deleted = await _tableService.DeleteAsync(id);
 
         if (!deleted)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Mesa no encontrada",
+                detail: "No se encontró la mesa solicitada."
+            );
+
 
         return NoContent();
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create(TableCreateDto dto)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> Create([FromBody] TableCreateDto dto)
     {
-        try
-        {
-            var table = await _tableService.CreateAsync(dto);
+        var table = await _tableService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = table.Id },
-                table
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = table.Id },
+            table
+        );
     }
 }

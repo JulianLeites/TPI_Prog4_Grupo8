@@ -54,7 +54,7 @@ namespace Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Order_id")
+                    b.Property<int>("OrderGroup_id")
                         .HasColumnType("int");
 
                     b.Property<int>("Product_id")
@@ -71,11 +71,66 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Order_id");
+                    b.HasIndex("OrderGroup_id");
 
                     b.HasIndex("Product_id");
 
                     b.ToTable("OrderDetails");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderGroups");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PasswordReset", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResets");
                 });
 
             modelBuilder.Entity("Domain.Entities.Product", b =>
@@ -87,12 +142,14 @@ namespace Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -118,6 +175,9 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -168,23 +228,14 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.HasIndex("Name")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "User"
-                        });
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("Domain.Entities.Table", b =>
@@ -198,6 +249,9 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
@@ -206,7 +260,16 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tables");
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("Tables", t =>
+                        {
+                            t.HasCheckConstraint("CK_Tables_Capacity_Minimum", "[Capacity] >= 1");
+
+                            t.HasCheckConstraint("CK_Tables_Number_Minimum", "[Number] >= 1");
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.User", b =>
@@ -219,7 +282,10 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -242,61 +308,12 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.HasIndex("RoleId");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Email = "juan@example.com",
-                            Name = "Juan",
-                            Password = "123456",
-                            PhoneNumber = "3411111111",
-                            RoleId = 1,
-                            Surname = "Perez"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Email = "maria@example.com",
-                            Name = "Maria",
-                            Password = "123456",
-                            PhoneNumber = "3412222222",
-                            RoleId = 2,
-                            Surname = "Gomez"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Email = "pedro@example.com",
-                            Name = "Pedro",
-                            Password = "123456",
-                            PhoneNumber = "3413333333",
-                            RoleId = 2,
-                            Surname = "Lopez"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Email = "ana@example.com",
-                            Name = "Ana",
-                            Password = "123456",
-                            PhoneNumber = "3414444444",
-                            RoleId = 2,
-                            Surname = "Martinez"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Email = "lucas@example.com",
-                            Name = "Lucas",
-                            Password = "123456",
-                            PhoneNumber = "3415555555",
-                            RoleId = 2,
-                            Surname = "Fernandez"
-                        });
                 });
 
             modelBuilder.Entity("ReservationTable", b =>
@@ -327,9 +344,9 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.OrderDetail", b =>
                 {
-                    b.HasOne("Domain.Entities.Order", "order")
+                    b.HasOne("Domain.Entities.OrderGroup", "orderGroup")
                         .WithMany("Details")
-                        .HasForeignKey("Order_id")
+                        .HasForeignKey("OrderGroup_id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -339,9 +356,31 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("order");
+                    b.Navigation("orderGroup");
 
                     b.Navigation("product");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
+                {
+                    b.HasOne("Domain.Entities.Order", "order")
+                        .WithMany("OrderGroups")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("order");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PasswordReset", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.Product", b =>
@@ -393,6 +432,11 @@ namespace Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Domain.Entities.Order", b =>
+                {
+                    b.Navigation("OrderGroups");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OrderGroup", b =>
                 {
                     b.Navigation("Details");
                 });

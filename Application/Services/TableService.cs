@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Interfaces;
 
 namespace Application.Services;
@@ -8,15 +9,24 @@ namespace Application.Services;
 public class TableService : ITableService
 {
     private readonly ITableRepository _tableRepository;
+    private readonly IOrderRepository _orderRepository;
 
-    public TableService(ITableRepository tableRepository)
+    public TableService(
+        ITableRepository tableRepository,
+        IOrderRepository orderRepository)
     {
         _tableRepository = tableRepository;
+        _orderRepository = orderRepository;
     }
 
-    public async Task<IEnumerable<TableDto>> GetAllAsync()
+    public async Task<IEnumerable<TableDto>> GetAllAsync(TableState? state)
     {
-        var tables = await _tableRepository.GetAllAsync();
+        if (state.HasValue && !Enum.IsDefined(typeof(TableState), state.Value))
+            throw new ArgumentException("El estado de la mesa no es válido.");
+
+        var tables = state.HasValue 
+            ? await _tableRepository.GetByStateAsync(state.Value)
+            : await _tableRepository.GetAllAsync();
 
         return tables.Select(table => new TableDto
         {
@@ -43,14 +53,40 @@ public class TableService : ITableService
         };
     }
 
-    public async Task<TableDto?> UpdateAsync(
-        int id,
-        TableUpdateDto dto)
+    public async Task<TableDto?> GetByNumberAsync(int number)
     {
+        var table = await _tableRepository.GetByNumberAsync(number);
+
+        if (table is null)
+            return null;
+
+        return new TableDto
+        {
+            Id = table.Id,
+            Number = table.Number,
+            Capacity = table.Capacity,
+            State = table.State
+        };
+    }
+    public async Task<TableDto?> UpdateAsync(int id, TableUpdateDto dto)
+    {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
         var table = await _tableRepository.GetByIdAsync(id);
 
         if (table is null)
             return null;
+
+        if (dto.Capacity < 1)
+            throw new ArgumentException("La capacidad debe ser minimo 1.");
+
+        if (dto.Number < 1)
+            throw new ArgumentException("El número de mesa debe ser minimo 1.");
+
+
+        if (await _tableRepository.ExistsByNumberAsync(dto.Number, id))
+            throw new ArgumentException("Ya existe otra mesa con ese número.");
 
         table.Number = dto.Number;
         table.Capacity = dto.Capacity;
@@ -73,12 +109,40 @@ public class TableService : ITableService
         if (table is null)
             return false;
 
-        await _tableRepository.DeleteAsync(table);
-        return true;
+        if (table.State == TableState.Occupied)
+            throw new InvalidOperationException("No se puede eliminar una mesa que está ocupada.");
+
+        var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
+
+        if (hasOpenOrders)
+            throw new InvalidOperationException("No se puede borrar una mesa que tiene pedidos abiertos");
+
+        var now = DateTime.Now;
+        var date = DateOnly.FromDateTime(now);
+        var time = TimeOnly.FromDateTime(now);
+
+        var hasFutureReservations = await _tableRepository.HasFutureConfirmedReservationsAsync(id, date, time);
+
+        if (hasFutureReservations)
+            throw new InvalidOperationException("No se puede eliminar una mesa que tiene reservas futuras confirmadas");
+
+        return await _tableRepository.SoftDeleteAsync(id);
     }
 
     public async Task<TableDto> CreateAsync(TableCreateDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
+        if (dto.Capacity < 1)
+            throw new ArgumentException("La capacidad debe ser minimo 1.");
+        
+        if (dto.Number < 1)
+            throw new ArgumentException("El número de mesa debe ser minimo 1.");
+
+        if (await _tableRepository.ExistsByNumberAsync(dto.Number))
+            throw new ArgumentException("Ya existe una mesa con ese numero");
+
         var table = new Table
         {
             Number = dto.Number,
@@ -98,10 +162,24 @@ public class TableService : ITableService
 
     public async Task<TableDto?> ChangeStateAsync(int id, ChangeTableStateDto dto)
     {
+        if (dto is null)
+            throw new ArgumentNullException(nameof(dto));
+
+        if (!Enum.IsDefined(typeof(TableState), dto.State))
+            throw new ArgumentException("El estado de la mesa no es válido.");
+
         var table = await _tableRepository.GetByIdAsync(id);
 
         if (table is null)
             return null;
+
+        if(dto.State == TableState.Unoccupied)
+        {
+            var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
+
+            if (hasOpenOrders)
+                throw new InvalidOperationException("No se puede liberar una mesa que tiene pedidos abiertos");
+        }
 
         table.State = dto.State;
 

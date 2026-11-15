@@ -14,23 +14,42 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<OrderDetail> OrderDetails { get; set; }
+    public DbSet<OrderGroup> OrderGroups { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<ProductCategory> ProductCategories { get; set; }
     public DbSet<Table> Tables { get; set; }
     public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<PasswordReset> PasswordResets { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-
         
         modelBuilder.Entity<Product>()
             .HasOne(p => p.ProductCategory)
             .WithMany(pc => pc.Products)
             .HasForeignKey(p => p.ProductCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        modelBuilder.Entity<Table>()
+            .HasIndex(t => t.Number)
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+
+        modelBuilder.Entity<Table>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_Tables_Number_Minimum",
+                "[Number] >= 1"));
+
+        modelBuilder.Entity<Table>()
+            .ToTable(t => t.HasCheckConstraint(
+                "CK_Tables_Capacity_Minimum",
+                "[Capacity] >= 1"));
 
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
@@ -49,9 +68,9 @@ public class ApplicationDbContext : DbContext
             .WithMany(t => t.Reservations);
 
         modelBuilder.Entity<OrderDetail>()
-            .HasOne(od => od.order)
-            .WithMany(o => o.Details)
-            .HasForeignKey(od => od.Order_id)
+            .HasOne(od => od.orderGroup)
+            .WithMany(og => og.Details)
+            .HasForeignKey(od => od.OrderGroup_id)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<OrderDetail>()
@@ -59,74 +78,27 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(od => od.Product_id)
             .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<Role>().HasData(
-            new Role
-            {
-                Id = 1,
-                Name = "Admin"
-            },
-            new Role
-            {
-                Id = 2,
-                Name = "User"
-            }
-        );
+
+        modelBuilder.Entity<OrderGroup>()
+            .HasOne(og => og.order)
+            .WithMany(o => o.OrderGroups)
+            .HasForeignKey(og => og.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<Order>()
             .HasOne(o => o.Table)
             .WithMany(t => t.Orders)
             .HasForeignKey(o => o.Table_id)
             .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<User>().HasData(
-            new User
-            {
-                Id = 1,
-                Name = "Juan",
-                Surname = "Perez",
-                Password = "123456",
-                Email = "juan@example.com",
-                PhoneNumber = "3411111111",
-                RoleId = 1,
-            },
-            new User
-            {
-                Id = 2,
-                Name = "Maria",
-                Surname = "Gomez",
-                Password = "123456",
-                Email = "maria@example.com",
-                PhoneNumber = "3412222222",
-                RoleId = 2
-            },
-            new User
-            {
-                Id = 3,
-                Name = "Pedro",
-                Surname = "Lopez",
-                Password = "123456",
-                Email = "pedro@example.com",
-                PhoneNumber = "3413333333",
-                RoleId = 2
-            },
-            new User
-            {
-                Id = 4,
-                Name = "Ana",
-                Surname = "Martinez",
-                Password = "123456",
-                Email = "ana@example.com",
-                PhoneNumber = "3414444444",
-                RoleId = 2
-            },
-            new User
-            {
-                Id = 5,
-                Name = "Lucas",
-                Surname = "Fernandez",
-                Password = "123456",
-                Email = "lucas@example.com",
-                PhoneNumber = "3415555555",
-                RoleId = 2
-            }
-        );
+
+        modelBuilder.Entity<PasswordReset>()
+            .HasOne(pr => pr.User)
+            .WithMany()
+            .HasForeignKey(pr => pr.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Role>()
+            .HasIndex(r => r.Name)
+            .IsUnique();
     }
 }

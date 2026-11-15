@@ -8,7 +8,7 @@ namespace Presentation.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "admin")]
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _roleService;
@@ -31,7 +31,11 @@ public class RoleController : ControllerBase
         var role = await _roleService.GetByIdAsync(id);
 
         if (role is null)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
 
         return Ok(role);
     }
@@ -39,18 +43,16 @@ public class RoleController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, RoleUpdateDto dto)
     {
-        try
-        {
-            var role = await _roleService.UpdateAsync(id, dto);
+        var role = await _roleService.UpdateAsync(id, dto);
 
-            if (role is null)
-                return NotFound();
-            return Ok(role);
-        }
-        catch(ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        if (role is null)
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
+
+        return Ok(role);
     }
 
     [HttpDelete("{id:int}")]
@@ -59,7 +61,11 @@ public class RoleController : ControllerBase
         var deleted = await _roleService.DeleteAsync(id);
 
         if (!deleted)
-            return NotFound();
+            return Problem(
+                statusCode: 404,
+                title: "Rol no encontrado",
+                detail: "No se encontró el rol solicitado."
+            );
 
         return NoContent();
     }
@@ -67,19 +73,12 @@ public class RoleController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(RoleCreateDto dto)
     {
-        try
-        {
-            var role = await _roleService.CreateAsync(dto);
+        var role = await _roleService.CreateAsync(dto);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = role.Id },
-                role
-            );
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message});
-        }
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = role.Id },
+            role
+        );
     }
 }

@@ -6,9 +6,9 @@ public interface IOrderDetailService
 {
     Task<IEnumerable<OrderDetailDto>> GetAllAsync();
     Task<OrderDetailDto?> GetByIdAsync(int id);
-    Task<IEnumerable<OrderDetailDto>> GetDetailsByOrderIdAsync(int orderId);
+    Task<IEnumerable<OrderDetailDto>> GetDetailsByOrderGroupIdAsync(int orderGroupId);
     Task<IEnumerable<OrderDetailDto>> GetDetailsByProductIdAsync(int productId);
-    Task<OrderDetailDto?> UpdateAsync(int id, CreateOrderDetailDto dto);
+    Task<OrderDetailDto?> ChangeQuantityAsync(int id, OrderDetailQuantityDto dto);
     Task<bool> DeleteAsync(int id);
     Task<OrderDetailDto> CreateAsync(CreateOrderDetailDto dto);
 }

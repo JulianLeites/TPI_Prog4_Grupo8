@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Models;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Interfaces;
 using System;
@@ -60,24 +61,24 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<UserResponseDto?> UpdateAsync(
-        int id,
-        UserUpdateDto dto)
+    public async Task<UserResponseDto?> UpdateAsync(int id, UserUpdateDto dto)
     {
         var user = await _userRepository.GetByIdAsync(id);
 
         if (user is null)
             return null;
 
-        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
+        var email = dto.Email.Trim().ToLowerInvariant();
 
-        if (role is null)
-            throw new ArgumentException("El rol seleccionado no existe");
-        user.Name = dto.Name;
-        user.Surname = dto.Surname;
-        user.Email = dto.Email;
-        user.PhoneNumber = dto.PhoneNumber;
-        user.RoleId = dto.RoleId;
+        var existingUser = await _userRepository.GetByEmailAsync(email);
+
+        if (existingUser is not null && existingUser.Id != id)
+            throw new ArgumentException("El email ya esta registrado por otro usuario");
+
+        user.Name = dto.Name.Trim();
+        user.Surname = dto.Surname.Trim();
+        user.Email = email;
+        user.PhoneNumber = dto.PhoneNumber.Trim();
 
         await _userRepository.UpdateAsync(user);
 
@@ -100,12 +101,21 @@ public class UserService : IUserService
         if (user is null)
             return false;
 
-        await _userRepository.DeleteAsync(user);
-        return true;
+        if (user.RoleId == RoleIds.Admin)
+            await EnsureAnotherAdminExistsAsync();
+
+        return await _userRepository.SoftDeleteAsync(id);
     }
 
     public async Task<UserResponseDto> CreateAsync(UserCreateDto dto)
     {
+        var email = dto.Email.Trim().ToLowerInvariant();
+
+        var emailExists = await _userRepository.EmailExistsAsync(email);
+
+        if (emailExists)
+            throw new ArgumentException("El email ya esta registrado");
+
         var role = await _roleRepository.GetByIdAsync(dto.RoleId);
 
         if (role is null)
@@ -113,10 +123,10 @@ public class UserService : IUserService
 
         var user = new User
         {
-            Name = dto.Name,
-            Surname = dto.Surname,
-            Email = dto.Email,
-            PhoneNumber = dto.PhoneNumber,
+            Name = dto.Name.Trim(),
+            Surname = dto.Surname.Trim(),
+            Email = email,
+            PhoneNumber = dto.PhoneNumber.Trim(),
             RoleId = dto.RoleId,
             Password = _passwordHasher.HashPassword(dto.Password)
         };
@@ -155,5 +165,61 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
 
         return true;
+    }
+
+    public async Task<UserResponseDto?> ChangeRoleAsync(int id, ChangeRoleDto dto)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return null;
+
+        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
+
+        if (role is null)
+            throw new ArgumentException("El rol seleccionado no existe");
+
+        if (user.RoleId == RoleIds.Admin && role.Id != RoleIds.Admin)
+            await EnsureAnotherAdminExistsAsync();
+
+        user.RoleId = role.Id;
+        user.Role = role;
+
+        await _userRepository.UpdateAsync(user);
+
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Surname = user.Surname,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
+        };
+    }
+
+    public async Task<IEnumerable<UserResponseDto>> GetByRoleIdAsync(int roleId)
+    {
+        var users = await _userRepository.GetByRoleIdAsync(roleId);
+
+        return users.Select(user => new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Surname = user.Surname,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            RoleId = user.RoleId,
+            RoleName = user.Role.Name
+        });
+    }
+
+    private async Task EnsureAnotherAdminExistsAsync()
+    {
+        var admins = await _userRepository.GetByRoleIdAsync(RoleIds.Admin);
+
+        if (admins.Count() <= 1)
+            throw new InvalidOperationException("Debe quedar al menos un administrador en el sistema.");
     }
 }

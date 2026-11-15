@@ -10,8 +10,10 @@ public class OrderDto
 
     public OrderState State { get; set; }
     public decimal Total { get; set; }
+
+    public decimal? TotalUsd { get; set; }
     public int Table_id { get; set; }
-    public ICollection<OrderDetail> Details { get; set; } = new List<OrderDetail>();
+    public ICollection<OrderProductSummaryDto> Details { get; set; } = new List<OrderProductSummaryDto>();
 }
 
 public class OrderCreateDto

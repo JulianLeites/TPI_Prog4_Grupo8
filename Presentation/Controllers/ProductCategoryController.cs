@@ -7,7 +7,7 @@ namespace Presentation.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "waiter,admin")]
 public class ProductCategoriesController : ControllerBase
 {
     private readonly IProductCategoryService _service;
@@ -29,8 +29,21 @@ public class ProductCategoriesController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ProductCategoryDto>> GetById(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var category = await _service.GetByIdAsync(id);
-        if (category == null) return NotFound();
+
+        if (category is null)
+            return Problem(
+                statusCode: 404,
+                title: "Categoría no encontrada",
+                detail: "No se encontró la categoría solicitada."
+            );
 
         return Ok(category);
     }
@@ -45,8 +58,21 @@ public class ProductCategoriesController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCategoryDto dto)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var result = await _service.UpdateAsync(id, dto);
-        if (!result) return NotFound();
+
+        if (!result)
+            return Problem(
+                statusCode: 404,
+                title: "Categoría no encontrada",
+                detail: "No se encontró la categoría solicitada."
+            );
 
         return NoContent();
     }
@@ -54,9 +80,45 @@ public class ProductCategoriesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
         var result = await _service.DeleteAsync(id);
-        if (!result) return NotFound();
+
+        if (!result)
+            return Problem(
+                statusCode: 404,
+                title: "Categoría no encontrada",
+                detail: "No se encontró la categoría solicitada."
+            );
 
         return NoContent();
+    }
+
+    [HttpGet("{id:int}/with-products")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ProductCategoryWithProductsDto>> GetCategoryWithProducts(int id)
+    {
+        if (id <= 0)
+            return Problem(
+                statusCode: 400,
+                title: "Identificador inválido",
+                detail: "El ID debe ser mayor que cero."
+            );
+
+        var category = await _service.GetCategoryWithProductsAsync(id);
+
+        if (category is null)
+            return Problem(
+                statusCode: 404,
+                title: "Categoría no encontrada",
+                detail: "No se encontró la categoría solicitada."
+            );
+
+        return Ok(category);
     }
 }
