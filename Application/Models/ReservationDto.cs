@@ -33,3 +33,12 @@ public class ChangeReservationStateDto
 {
     public ReservationState State { get; set; }
 }
+
+public class WalkInReservationDto
+{
+    [Range(1, 50, ErrorMessage = "La cantidad de comensales debe estar entre 1 y 50")]
+    public int Diners { get; set; }
+
+    [MinLength(1, ErrorMessage = "Seleccioná al menos una mesa")]
+    public List<int> TableIds { get; set; } = new();
+}
