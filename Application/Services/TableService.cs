@@ -166,14 +166,17 @@ public class TableService : ITableService
             throw new ArgumentNullException(nameof(dto));
 
         if (!Enum.IsDefined(typeof(TableState), dto.State))
-            throw new ArgumentException("El estado de la mesa no es válido.");
+            throw new ArgumentException("El estado de la mesa no es valido");
 
         var table = await _tableRepository.GetByIdAsync(id);
 
         if (table is null)
             return null;
 
-        if(dto.State == TableState.Unoccupied)
+        if (table.State != TableState.Occupied || dto.State != TableState.Unoccupied)
+            throw new InvalidOperationException("Solo se permite cambiar el estado de una mesa de Ocupada a Desocupada");
+
+        if (dto.State == TableState.Unoccupied)
         {
             var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
 

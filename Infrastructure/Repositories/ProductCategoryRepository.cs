@@ -30,7 +30,7 @@ public class ProductCategoryRepository : GenericRepository<ProductCategory>, IPr
     {
         return await _dbSet
             .Where(c => c.Id == categoryId && !c.IsDeleted)
-            .Include(c => c.Products)
+            .Include(c => c.Products.Where(p => !p.IsDeleted))
             .FirstOrDefaultAsync(c => c.Id == categoryId);
     }
     public async Task<bool> ExistsByNameAsync(string name)
