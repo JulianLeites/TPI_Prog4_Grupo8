@@ -20,7 +20,7 @@ public class OrderGroupController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "waiter,admin,kitchen")]
     public async Task<IActionResult> GetById(int id)
     {
         if (id <= 0)
@@ -43,7 +43,7 @@ public class OrderGroupController : ControllerBase
     }
 
     [HttpGet("Order/{orderId:int}")]
-    [Authorize(Roles = "waiter,admin,user")]
+    [Authorize(Roles = "waiter,admin")]
     public async Task<IActionResult> GetByOrderId(int orderId)
     {
         if (orderId <= 0)
