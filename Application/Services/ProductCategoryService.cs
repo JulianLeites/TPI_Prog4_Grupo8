@@ -6,6 +6,7 @@ using Application.Interfaces;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Services;
 
 namespace Application.Services;
 
@@ -13,9 +14,12 @@ public class ProductCategoryService : IProductCategoryService
 {
     private readonly IProductCategoryRepository _repository;
 
-    public ProductCategoryService(IProductCategoryRepository repository)
+    private readonly IDolarService _dolarService;
+    public ProductCategoryService(IProductCategoryRepository repository, IDolarService dolarService)
     {
         _repository = repository;
+
+        _dolarService = dolarService;
     }
 
     public async Task<IEnumerable<ProductCategoryDto>> GetAllAsync()
@@ -103,7 +107,8 @@ public class ProductCategoryService : IProductCategoryService
     public async Task<ProductCategoryWithProductsDto?> GetCategoryWithProductsAsync(int categoryId)
     {
         var category = await _repository.GetCategoryWithProductsAsync(categoryId);
-        
+        var dolarOficial = await _dolarService.GetDolarOficialVentaAsync();
+
         if (category is null)
             return null;
 
@@ -116,6 +121,7 @@ public class ProductCategoryService : IProductCategoryService
                 Id = p.Id,
                 Name = p.Name,
                 Price = p.Price,
+                PriceUsd = CurrencyConverter.ToUsd(p.Price, dolarOficial),
                 Description = p.Description,
                 ImageUrl = p.ImageUrl,
                 ProductCategoryId = p.ProductCategoryId,
