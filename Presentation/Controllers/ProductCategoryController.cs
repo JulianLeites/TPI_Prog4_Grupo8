@@ -49,6 +49,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult<ProductCategoryDto>> Create([FromBody] CreateProductCategoryDto dto)
     {
         var created = await _service.CreateAsync(dto);
@@ -56,6 +57,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateProductCategoryDto dto)
     {
         if (id <= 0)
@@ -78,6 +80,7 @@ public class ProductCategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         if (id <= 0)

@@ -49,6 +49,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> Create([FromBody] ProductDto dto)
     {
         var product = await _productService.CreateAsync(dto);
@@ -61,6 +62,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> Update([FromRoute]int id, [FromBody] ProductDto dto)
     {
         if (id <= 0)
@@ -83,6 +85,7 @@ public class ProductController : ControllerBase
     }
 
     [HttpPatch("{id:int}/price")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> ChangePrice([FromRoute]int id, [FromBody] ProductPriceDto dto)
     {
         if (id <= 0)
@@ -129,6 +132,7 @@ public class ProductController : ControllerBase
     }
     
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "admin")]
     public async Task<ActionResult> Delete([FromRoute] int id)
     {
         if (id <= 0)
