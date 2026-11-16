@@ -173,9 +173,6 @@ public class TableService : ITableService
         if (table is null)
             return null;
 
-        if (table.State != TableState.Occupied || dto.State != TableState.Unoccupied)
-            throw new InvalidOperationException("Solo se permite cambiar el estado de una mesa de Ocupada a Desocupada");
-
         if (dto.State == TableState.Unoccupied)
         {
             var hasOpenOrders = await _orderRepository.GetActiveOrderByTableIdAsync(id) != null;
