@@ -155,6 +155,8 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        await dbContext.Database.MigrateAsync();
+
         var roleSeeder = scope.ServiceProvider.GetRequiredService<RoleSeeder>();
         await roleSeeder.InitializeAsync();
 
