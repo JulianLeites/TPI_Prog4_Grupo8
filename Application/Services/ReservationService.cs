@@ -59,10 +59,10 @@ public class ReservationService : IReservationService
     {
         if (dto.Diners < 1)
             throw new ArgumentException("La cantidad de comensales debe ser al menos 1.");
-       
+
         var reservationDateTime = dto.Date.ToDateTime(dto.Time);
-        if (reservationDateTime <= DateTime.Now)
-            throw new ArgumentException("La fecha y hora de la reserva deben ser posteriores al actual.");
+        if (reservationDateTime < DateTime.Now.AddHours(2))
+            throw new ArgumentException("Las reservas deben hacerse con al menos 2 horas de anticipación.");
 
         var user = await _userRepository.GetByIdAsync(dto.UserId);
         if (user is null)
@@ -70,6 +70,7 @@ public class ReservationService : IReservationService
 
         var occupiedTableIds = await _repository.GetOccupiedTableIdsAsync(dto.Date, dto.Time);
         var allTables = (await _tableRepository.GetAllAsync()).ToList();
+
 
         var assignedTables = new List<Table>();
 
@@ -172,6 +173,21 @@ public class ReservationService : IReservationService
         if (!isValidTransition)
             throw new InvalidOperationException($"No se puede cambiar una reserva de estado '{reservation.State}' a '{dto.State}'.");
 
+        if (dto.State == ReservationState.Confirmed &&
+            reservation.Date.ToDateTime(reservation.Time) > DateTime.Now.AddMinutes(30))
+            throw new InvalidOperationException("Solo se puede confirmar la reserva cuando el cliente llega.");
+
+        if (dto.State == ReservationState.Confirmed)
+        {
+            foreach (var table in reservation.Tables)
+            {
+                if (table.State == TableState.Occupied)
+                    throw new InvalidOperationException($"La mesa {table.Number} todavía está ocupada.");
+
+                table.State = TableState.Occupied;
+            }
+        }
+
         reservation.State = dto.State;
         await _repository.UpdateAsync(reservation);
 
@@ -258,6 +274,11 @@ public class ReservationService : IReservationService
 
         var occupiedIds = await _repository.GetOccupiedTableIdsAsync(date, time);
         var allTables = await _tableRepository.GetAllAsync();
+        if ((date.ToDateTime(time) - DateTime.Now).TotalMinutes < 60)
+        {
+            occupiedIds.AddRange(
+                allTables.Where(t => t.State == TableState.Occupied).Select(t => t.Id));
+        }
 
         return allTables
             .Where(t => !occupiedIds.Contains(t.Id))
@@ -271,4 +292,63 @@ public class ReservationService : IReservationService
             });
     }
 
+    public async Task<ReservationDto> CreateWalkInAsync(WalkInReservationDto dto, int userId)
+    {
+        var now = DateTime.Now;
+        var date = DateOnly.FromDateTime(now);
+        var time = new TimeOnly(now.Hour, now.Minute);
+
+        var reservedTableIds = await _repository.GetOccupiedTableIdsAsync(date, time);
+        var assignedTables = new List<Table>();
+
+        foreach (var tableId in dto.TableIds.Distinct())
+        {
+            var table = await _tableRepository.GetByIdAsync(tableId)
+                ?? throw new ArgumentException($"No existe una mesa con ID {tableId}.");
+
+            if (table.State == TableState.Occupied)
+                throw new InvalidOperationException($"La mesa {table.Number} ya está ocupada.");
+
+            if (reservedTableIds.Contains(tableId))
+                throw new InvalidOperationException($"La mesa {table.Number} tiene una reserva cercana a este horario.");
+
+            assignedTables.Add(table);
+        }
+
+        int totalCapacity = assignedTables.Sum(t => t.Capacity);
+        if (totalCapacity < dto.Diners)
+            throw new ArgumentException($"La capacidad de las mesas ({totalCapacity}) es menor a la cantidad de comensales ({dto.Diners}).");
+
+        foreach (var table in assignedTables)
+            table.State = TableState.Occupied;
+
+        var entity = new Reservation
+        {
+            Date = date,
+            Time = time,
+            Diners = dto.Diners,
+            UserId = userId,
+            State = ReservationState.Confirmed,
+            Tables = assignedTables
+        };
+
+        
+        await _repository.AddAsync(entity);
+
+        return new ReservationDto
+        {
+            Id = entity.Id,
+            Date = entity.Date,
+            Time = entity.Time,
+            Diners = entity.Diners,
+            UserId = entity.UserId,
+            TableIds = entity.Tables.Select(t => t.Id).ToList(),
+            State = entity.State
+        };
+    }
+
+
+
 }
+
+
