@@ -202,4 +202,28 @@ public class ReservationsController : ControllerBase
 
         return userId;
     }
+
+    [HttpPost("walk-in")]
+    [Authorize(Roles = "waiter,admin")]
+    public async Task<IActionResult> CreateWalkIn([FromBody] WalkInReservationDto dto)
+    {
+        var userId = GetLoggedUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        try
+        {
+            var created = await _service.CreateWalkInAsync(dto, userId.Value);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
 }

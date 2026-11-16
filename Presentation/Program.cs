@@ -12,6 +12,7 @@ using System.Text;
 using Microsoft.OpenApi;
 using Presentation.Exceptions;
 using System.Globalization;
+using System.Linq.Expressions;
 
 Console.WriteLine(CultureInfo.CurrentCulture.Name);
 Console.WriteLine(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
@@ -61,9 +62,7 @@ builder.Services.AddOpenApi();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        )
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // Dependency Injection
@@ -140,11 +139,8 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
@@ -155,15 +151,23 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var roleSeeder = scope.ServiceProvider
-        .GetRequiredService<RoleSeeder>();
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    await roleSeeder.InitializeAsync();
+        await dbContext.Database.MigrateAsync();
 
-    var adminSeeder = scope.ServiceProvider
-        .GetRequiredService<InitialAdminSeeder>();
+        var roleSeeder = scope.ServiceProvider.GetRequiredService<RoleSeeder>();
+        await roleSeeder.InitializeAsync();
 
-    await adminSeeder.InitializeAsync(app.Configuration);
+        var adminSeeder = scope.ServiceProvider.GetRequiredService<InitialAdminSeeder>();
+        await adminSeeder.InitializeAsync(app.Configuration);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocurrió un error al ejecutar los seeders al iniciar la aplicación.");
+    }
 }
 
 app.Run();
